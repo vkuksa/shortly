@@ -15,7 +15,7 @@ test:
 
 # Build the project
 build:
-	$(GOBUILD) -o shortly ./cmd/shortly/main.go
+	$(GOBUILD) -o bin/shortly ./cmd/shortly/main.go
 
 # Clean the build artifacts
 clean:
