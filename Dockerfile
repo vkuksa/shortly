@@ -1,0 +1,42 @@
+# syntax=docker/dockerfile:1
+
+# Build the application from source
+FROM golang:1.20-alpine AS build-stage
+
+# Set the working directory inside the container
+WORKDIR /build
+
+# Install build tools
+RUN apk add --no-cache make
+
+# Download dependencies
+COPY go.mod go.sum Makefile /build/
+RUN make fetch
+
+# Copy the entire project directory to the container
+COPY . /build/
+
+# Build an application
+RUN CGO_ENABLED=0 GOOS=linux make build
+
+# Run the tests in the container
+FROM build-stage AS run-test-stage
+RUN make test
+
+# Deploy the application binary into a lean image
+FROM gcr.io/distroless/base-debian11 AS build-release-stage
+
+WORKDIR /
+
+# Copy the binary
+COPY --from=build-stage /build/bin/shortly .
+
+# Copy the config
+COPY --from=build-stage /build/shortly.conf .
+
+# Expose the desired port for the application
+EXPOSE 8080
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["./shortly"]
