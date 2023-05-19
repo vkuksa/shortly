@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"embed"
 	"errors"
 	"fmt"
 	"log"
@@ -10,44 +9,44 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	shortly "github.com/vkuksa/shortly/internal/domain"
 )
 
-// ShutdownTimeout is the time given for outstanding requests to finish before shutdown.
-const DefaultShutdownTimeout = 10 * time.Second
+const (
+	// ShutdownTimeout is the time given for outstanding requests to finish before shutdown.
+	DefaultShutdownTimeout = 10 * time.Second
+)
 
 type Server struct {
-	ln     net.Listener
-	srv    *http.Server
-	router chi.Router
+	ln  net.Listener
+	srv *http.Server
 
 	Addr   string
 	Scheme string
 	Domain string
 
 	LinkService shortly.LinkService
-
-	Assets embed.FS
 }
 
 func NewServer() *Server {
 	s := &Server{
-		srv:    &http.Server{},
-		router: chi.NewRouter(),
+		srv: &http.Server{},
 	}
 
-	s.srv.Handler = s.router
+	router := chi.NewRouter()
 
 	// Add middlewares for logging, timeout and panic recovery
-	s.router.Use(middleware.Timeout(DefaultShutdownTimeout))
-	s.router.Use(middleware.Recoverer)
-	s.router.Use(middleware.RequestID)
-	s.router.Use(middleware.Logger)
+	router.Use(middleware.Timeout(DefaultShutdownTimeout))
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Logger)
 
-	// Register link-related routes
-	s.registerLinkRoutes()
+	// Register handlers
+	s.registerLinkRoutes(router)
+
+	s.srv.Handler = router
 
 	return s
 }

@@ -5,16 +5,17 @@ import (
 	"text/template"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/vkuksa/shortly/assets"
 )
 
-func (s *Server) registerLinkRoutes() {
-	s.router.Get("/", s.handleRoot)
-	s.router.Post("/", s.handleStoreLink)
-	s.router.Get("/{uuid}", s.handleRedirrectLink)
+func (s *Server) registerLinkRoutes(router chi.Router) {
+	router.Get("/", s.handleRoot)
+	router.Post("/", s.handleStoreLink)
+	router.Get("/{uuid}", s.handleRedirrectLink)
 }
 
 func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFS(s.Assets, "index.html")
+	tmpl, err := template.ParseFS(assets.All, "index.html")
 	if err != nil {
 		s.HandleError(w, r, err)
 		return
@@ -42,7 +43,7 @@ func (s *Server) handleStoreLink(w http.ResponseWriter, r *http.Request) {
 		Original:  link.URL,
 	}
 
-	tmpl, err := template.ParseFS(s.Assets, "index.html")
+	tmpl, err := template.ParseFS(assets.All, "index.html")
 	if err != nil {
 		s.HandleError(w, r, err)
 		return

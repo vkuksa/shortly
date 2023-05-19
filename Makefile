@@ -15,12 +15,12 @@ test:
 
 # Build the project
 build:
-	$(GOBUILD) -o bin/shortly ./main.go
+	$(GOBUILD) -a -installsuffix cgo -o bin/shortly ./cmd/main.go
 
 # Clean the build artifacts
 clean:
 	$(GOCLEAN)
-	rm -f myapp
+	rm -f ./bin/shortly
 
 # Linting
 lint:

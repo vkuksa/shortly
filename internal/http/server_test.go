@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/vkuksa/shortly/assets"
 	shortlyhttp "github.com/vkuksa/shortly/internal/http"
 	"github.com/vkuksa/shortly/mock"
 )
@@ -29,7 +28,6 @@ func MustOpenServer(tb testing.TB) *Server {
 	// Initialize wrapper and set test configuration settings.
 	s := &Server{Server: shortlyhttp.NewServer(), LinkService: ls}
 	s.Server.LinkService = ls
-	s.Server.Assets = assets.All
 
 	// Begin running test server.
 	if err := s.Open(); err != nil {

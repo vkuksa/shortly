@@ -9,7 +9,6 @@ import (
 	"os/signal"
 
 	"github.com/BurntSushi/toml"
-	"github.com/vkuksa/shortly/assets"
 	shortly "github.com/vkuksa/shortly/internal/domain"
 	"github.com/vkuksa/shortly/internal/http"
 	"github.com/vkuksa/shortly/internal/shortener"
@@ -87,7 +86,6 @@ func NewMain(c *Config) *Main {
 	server.Addr = c.HTTP.Addr
 	server.Scheme = c.HTTP.Scheme
 	server.Domain = c.HTTP.Domain
-	server.Assets = assets.All
 
 	return &Main{
 		Config: c,
