@@ -1,31 +1,11 @@
 package http
 
 import (
-	"log"
 	"net/http"
-	"os/exec"
-	"path/filepath"
-	"strings"
 	"text/template"
 
 	"github.com/go-chi/chi/v5"
 )
-
-// TODO: remove this function and usages and think of getting proper template path
-func indexPath() (string, error) {
-	cmd := exec.Command("go", "list", "-m", "-f", "{{.Dir}}")
-	output, err := cmd.Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	moduleRoot := strings.TrimSpace(string(output))
-
-	// Construct the template file path relative to the current working directory
-	templatePath := filepath.Join(moduleRoot, "web", "index.html")
-
-	return templatePath, nil
-}
 
 func (s *Server) registerLinkRoutes() {
 	s.router.Get("/", s.handleRoot)
@@ -34,13 +14,11 @@ func (s *Server) registerLinkRoutes() {
 }
 
 func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
-	path, err := indexPath()
+	tmpl, err := template.ParseFS(s.Assets, "index.html")
 	if err != nil {
 		s.HandleError(w, r, err)
 		return
 	}
-
-	tmpl := template.Must(template.ParseFiles(path))
 
 	if err := tmpl.Execute(w, nil); err != nil {
 		s.HandleError(w, r, err)
@@ -64,13 +42,11 @@ func (s *Server) handleStoreLink(w http.ResponseWriter, r *http.Request) {
 		Original:  link.URL,
 	}
 
-	path, err := indexPath()
+	tmpl, err := template.ParseFS(s.Assets, "index.html")
 	if err != nil {
 		s.HandleError(w, r, err)
 		return
 	}
-
-	tmpl := template.Must(template.ParseFiles(path))
 
 	if err := tmpl.Execute(w, l); err != nil {
 		s.HandleError(w, r, err)

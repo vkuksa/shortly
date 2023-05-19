@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vkuksa/shortly"
+	shortly "github.com/vkuksa/shortly/internal/domain"
 )
 
 func TestLinkEndpoints(t *testing.T) {
@@ -15,15 +15,15 @@ func TestLinkEndpoints(t *testing.T) {
 	s := MustOpenServer(t)
 	defer MustCloseServer(t, s)
 
-	testUrl := "http://example.com"
-	testUuid := "test"
+	testURL := "http://example.com"
+	testUUID := "test"
 	exmpl := &shortly.Link{
-		URL:  testUrl,
-		UUID: testUuid,
+		URL:  testURL,
+		UUID: testUUID,
 	}
 	s.LinkService.GetOriginalLinkFn = func(ctx context.Context, uuid string) (*shortly.Link, error) {
-		if uuid != testUuid {
-			return nil, shortly.Errorf(shortly.ERRNOTFOUND, "Expected")
+		if uuid != testUUID {
+			return nil, shortly.NewError(shortly.ErrNotFound, "Expected")
 		}
 
 		return exmpl, nil
@@ -32,8 +32,8 @@ func TestLinkEndpoints(t *testing.T) {
 		return nil
 	}
 	s.LinkService.GenerateShortenedLinkFn = func(ctx context.Context, url string) (*shortly.Link, error) {
-		if url != testUrl {
-			return nil, shortly.Errorf(shortly.ERRINVALID, "Expected")
+		if url != testURL {
+			return nil, shortly.NewError(shortly.ErrInvalid, "Expected")
 		}
 
 		return exmpl, nil
@@ -72,7 +72,7 @@ func TestLinkEndpoints(t *testing.T) {
 	t.Run("Handle Link Storage", func(t *testing.T) {
 		// Issue request for storing and generating of shortened link
 		formData := url.Values{}
-		formData.Set("url", testUrl)
+		formData.Set("url", testURL)
 		req := s.MustNewRequest(t, context.Background(), "POST", "/", strings.NewReader(formData.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 

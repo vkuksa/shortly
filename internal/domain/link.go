@@ -30,3 +30,12 @@ type LinkService interface {
 	// Increments counter of a link
 	AddHit(ctx context.Context, uuid string) error
 }
+
+// Represents an interface that serves storage-related operation upon links
+type LinkStorage interface {
+	Set(uuid string, link Link) error
+
+	Get(uuid string, link *Link) (bool, error)
+
+	Delete(uuid string) error
+}

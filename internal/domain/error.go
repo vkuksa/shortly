@@ -6,10 +6,10 @@ import (
 )
 
 const (
-	ERRINTERNAL = "internal"
-	ERRNOTFOUND = "not_found"
-	ERRINVALID  = "invalid"
-	ERRCONFLICT = "already_exists"
+	ErrInternal = "internal"
+	ErrNotFound = "not_found"
+	ErrInvalid  = "invalid"
+	ErrConflict = "already_exists"
 )
 
 // Error represents an application-specific error.
@@ -27,7 +27,7 @@ func (e *Error) Error() string {
 }
 
 // Errorf is a helper function to return an Error with a given code and formatted message.
-func Errorf(code string, format string, args ...interface{}) *Error {
+func NewError(code string, format string, args ...interface{}) *Error {
 	return &Error{
 		Code:    code,
 		Message: fmt.Sprintf(format, args...),
@@ -38,22 +38,28 @@ func Errorf(code string, format string, args ...interface{}) *Error {
 // Non-application errors always return EINTERNAL.
 func ErrorCode(err error) string {
 	var e *Error
-	if err == nil {
+
+	switch {
+	case err == nil:
 		return ""
-	} else if errors.As(err, &e) {
+	case errors.As(err, &e):
 		return e.Code
+	default:
+		return ErrInternal
 	}
-	return ERRINTERNAL
 }
 
 // ErrorMessage unwraps an application error and returns its message.
 // Non-application errors always return "Internal error".
 func ErrorMessage(err error) string {
 	var e *Error
-	if err == nil {
+
+	switch {
+	case err == nil:
 		return ""
-	} else if errors.As(err, &e) {
+	case errors.As(err, &e):
 		return e.Message
+	default:
+		return "Internal error."
 	}
-	return "Internal error."
 }

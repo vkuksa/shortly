@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/vkuksa/shortly/assets"
 	shortlyhttp "github.com/vkuksa/shortly/internal/http"
 	"github.com/vkuksa/shortly/mock"
 )
@@ -28,6 +29,7 @@ func MustOpenServer(tb testing.TB) *Server {
 	// Initialize wrapper and set test configuration settings.
 	s := &Server{Server: shortlyhttp.NewServer(), LinkService: ls}
 	s.Server.LinkService = ls
+	s.Server.Assets = assets.All
 
 	// Begin running test server.
 	if err := s.Open(); err != nil {
@@ -47,6 +49,8 @@ func MustCloseServer(tb testing.TB, s *Server) {
 
 // MustNewRequest creates a new HTTP request using the server's base URL and
 // attaching a user session based on the context.
+//
+//nolint:revive
 func (s *Server) MustNewRequest(tb testing.TB, ctx context.Context, method, url string, body io.Reader) *http.Request {
 	tb.Helper()
 

@@ -3,7 +3,7 @@ package mock
 import (
 	"context"
 
-	"github.com/vkuksa/shortly"
+	shortly "github.com/vkuksa/shortly/internal/domain"
 )
 
 var _ shortly.LinkService = (*LinkService)(nil)

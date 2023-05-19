@@ -4,14 +4,17 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 
 	"github.com/BurntSushi/toml"
-	"github.com/vkuksa/shortly"
-	"github.com/vkuksa/shortly/internal/business"
+	"github.com/vkuksa/shortly/assets"
+	shortly "github.com/vkuksa/shortly/internal/domain"
 	"github.com/vkuksa/shortly/internal/http"
-	"github.com/vkuksa/shortly/internal/storage/inmem"
+	"github.com/vkuksa/shortly/internal/shortener"
+	"github.com/vkuksa/shortly/pkg/storage"
+	"github.com/vkuksa/shortly/pkg/storage/inmem"
 )
 
 const (
@@ -27,29 +30,26 @@ func main() {
 	go func() { <-c; cancel() }()
 
 	// Parse command line flags
-	configPath, err := parseFlags(ctx, os.Args[1:])
+	configPath, err := parseFlags(os.Args[1:])
 	if err == flag.ErrHelp {
 		os.Exit(1)
 	} else if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatalf(err.Error())
 	}
 
 	// Load config
 	config, err := NewConfig(configPath)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatalf(err.Error())
 	}
 
 	// Instantiate a new type to represent application.
 	m := NewMain(config)
 
 	// Execute program.
-	if err := m.Run(ctx); err != nil {
+	if err := m.Run(); err != nil {
 		m.Close()
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatalf(err.Error())
 	}
 
 	// Wait for CTRL-C.
@@ -57,12 +57,11 @@ func main() {
 
 	// Clean up program.
 	if err := m.Close(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatalf(err.Error())
 	}
 }
 
-func parseFlags(ctx context.Context, args []string) (configPath string, err error) {
+func parseFlags(args []string) (configPath string, err error) {
 	fs := flag.NewFlagSet("shortly", flag.ContinueOnError)
 	fs.StringVar(&configPath, "config", DefaultConfigPath, "config path")
 	err = fs.Parse(args)
@@ -73,28 +72,29 @@ func parseFlags(ctx context.Context, args []string) (configPath string, err erro
 type Main struct {
 	Config *Config
 
-	LinkStorage shortly.LinkStorage
-	LinkService shortly.LinkService
+	Storage storage.Storage[shortly.Link]
+	Service shortly.LinkService
 
 	HTTPServer *http.Server
 }
 
 func NewMain(c *Config) *Main {
-	storage := CreateLinkStorage(c.DS.Kind)
-	service := business.NewLinkService(storage)
+	storage := NewStorage[shortly.Link](c.DS.Kind)
+	service := shortener.NewService(storage)
 	server := http.NewServer()
 
 	server.LinkService = service
 	server.Addr = c.HTTP.Addr
 	server.Scheme = c.HTTP.Scheme
 	server.Domain = c.HTTP.Domain
+	server.Assets = assets.All
 
 	return &Main{
 		Config: c,
 
-		LinkService: service,
-		LinkStorage: storage,
-		HTTPServer:  server,
+		Service:    service,
+		Storage:    storage,
+		HTTPServer: server,
 	}
 }
 
@@ -105,8 +105,8 @@ func (m *Main) Close() error {
 			return err
 		}
 	}
-	if m.LinkStorage != nil {
-		if err := m.LinkStorage.Close(); err != nil {
+	if m.Storage != nil {
+		if err := m.Storage.Close(); err != nil {
 			return err
 		}
 	}
@@ -114,14 +114,11 @@ func (m *Main) Close() error {
 }
 
 // Run executes the program
-func (m *Main) Run(ctx context.Context) (err error) {
-	if err := m.LinkStorage.Open(ctx); err != nil {
-		return fmt.Errorf("cannot open data source: %w", err)
-	}
+func (m *Main) Run() (err error) {
 	return m.HTTPServer.Open()
 }
 
-type Config struct { //TODO: define appropriate config?
+type Config struct {
 	DS struct {
 		Kind string `toml:"kind"`
 		Name string `toml:"name"`
@@ -139,9 +136,9 @@ func NewConfig(filepath string) (*Config, error) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, fmt.Errorf("config file not found: %s", filepath)
-		} else {
-			return nil, fmt.Errorf("newconfig: %w", err)
 		}
+
+		return nil, fmt.Errorf("newconfig: %w", err)
 	}
 
 	config := &Config{}
@@ -152,11 +149,12 @@ func NewConfig(filepath string) (*Config, error) {
 	return config, nil
 }
 
-func CreateLinkStorage(kind string) shortly.LinkStorage {
+func NewStorage[V any](kind string) storage.Storage[V] {
 	switch kind {
 	case "inmem":
-		return inmem.NewLinkStorage()
+		return inmem.NewStorage[V]()
 	default:
-		panic(fmt.Sprintf("Link storage %s is not supported", kind))
+		log.Fatalf("Link storage %s is not supported", kind)
+		return nil
 	}
 }

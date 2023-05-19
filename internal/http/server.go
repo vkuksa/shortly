@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"embed"
 	"errors"
 	"fmt"
 	"log"
@@ -11,7 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/vkuksa/shortly"
+	shortly "github.com/vkuksa/shortly/internal/domain"
 )
 
 // ShutdownTimeout is the time given for outstanding requests to finish before shutdown.
@@ -27,6 +28,8 @@ type Server struct {
 	Domain string
 
 	LinkService shortly.LinkService
+
+	Assets embed.FS
 }
 
 func NewServer() *Server {
@@ -114,10 +117,10 @@ func (s *Server) LogError(r *http.Request, err error) {
 
 // lookup of application error codes to HTTP status codes.
 var codes = map[string]int{
-	shortly.ERRCONFLICT: http.StatusConflict,
-	shortly.ERRINVALID:  http.StatusBadRequest,
-	shortly.ERRNOTFOUND: http.StatusNotFound,
-	shortly.ERRINTERNAL: http.StatusInternalServerError,
+	shortly.ErrConflict: http.StatusConflict,
+	shortly.ErrInvalid:  http.StatusBadRequest,
+	shortly.ErrNotFound: http.StatusNotFound,
+	shortly.ErrInternal: http.StatusInternalServerError,
 }
 
 // ErrorStatusCode returns the associated HTTP status code for a WTF error code.
