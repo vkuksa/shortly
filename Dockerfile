@@ -6,8 +6,10 @@ FROM golang:1.20-alpine AS build-stage
 # Set the working directory inside the container
 WORKDIR /build
 
-# Install build tools
-RUN apk add --no-cache make
+# Install build dependencies and golangci-lint
+RUN apk add --no-cache make && \
+    wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin && \
+    mv $(go env GOPATH)/bin/golangci-lint /usr/local/bin/
 
 # Download dependencies
 COPY go.mod go.sum Makefile /build/
@@ -15,6 +17,9 @@ RUN make fetch
 
 # Copy the entire project directory to the container
 COPY . /build/
+
+# Check project with linter
+RUN make lint
 
 # Build an application
 RUN CGO_ENABLED=0 GOOS=linux make build
