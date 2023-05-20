@@ -40,7 +40,6 @@ func NewServer() *Server {
 	// Add middlewares for logging, timeout and panic recovery
 	router.Use(middleware.Timeout(DefaultShutdownTimeout))
 	router.Use(middleware.Recoverer)
-	router.Use(middleware.RequestID)
 	router.Use(middleware.Logger)
 
 	// Register handlers

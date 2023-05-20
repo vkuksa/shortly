@@ -13,6 +13,7 @@ import (
 	"github.com/vkuksa/shortly/internal/http"
 	"github.com/vkuksa/shortly/internal/shortener"
 	"github.com/vkuksa/shortly/pkg/storage"
+	"github.com/vkuksa/shortly/pkg/storage/bbolt"
 	"github.com/vkuksa/shortly/pkg/storage/inmem"
 )
 
@@ -43,7 +44,10 @@ func main() {
 	}
 
 	// Instantiate a new type to represent application.
-	m := NewMain(config)
+	m, err := NewMain(config)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
 
 	// Execute program.
 	if err := m.Run(); err != nil {
@@ -77,8 +81,12 @@ type Main struct {
 	HTTPServer *http.Server
 }
 
-func NewMain(c *Config) *Main {
-	storage := NewStorage[shortly.Link](c.DS.Kind)
+func NewMain(c *Config) (*Main, error) {
+	storage, err := NewStorage[shortly.Link](c)
+	if err != nil {
+		return nil, fmt.Errorf("NewMain: %w", err)
+	}
+
 	service := shortener.NewService(storage)
 	server := http.NewServer()
 
@@ -93,7 +101,7 @@ func NewMain(c *Config) *Main {
 		Service:    service,
 		Storage:    storage,
 		HTTPServer: server,
-	}
+	}, nil
 }
 
 // Close gracefully stops the program.
@@ -117,16 +125,25 @@ func (m *Main) Run() (err error) {
 }
 
 type Config struct {
-	DS struct {
-		Kind string `toml:"kind"`
-		Name string `toml:"name"`
-	} `toml:"ds"`
-
 	HTTP struct {
 		Addr   string `toml:"addr"`
 		Scheme string `toml:"scheme"`
 		Domain string `toml:"domain"`
 	} `toml:"http"`
+
+	DB struct {
+		Kind       string `toml:"kind"`
+		Connection struct {
+			Host     string `toml:"host"`
+			Port     int64  `toml:"port"`
+			Username string `toml:"username"`
+			Password string `toml:"password"`
+		}
+		BBolt struct {
+			File   string `toml:"file"`
+			Bucket string `toml:"bucket"`
+		} `toml:"bbolt"`
+	} `toml:"db"`
 }
 
 func NewConfig(filepath string) (*Config, error) {
@@ -147,12 +164,18 @@ func NewConfig(filepath string) (*Config, error) {
 	return config, nil
 }
 
-func NewStorage[V any](kind string) storage.Storage[V] {
-	switch kind {
+func NewStorage[V any](c *Config) (storage.Storage[V], error) {
+	switch c.DB.Kind {
 	case "inmem":
-		return inmem.NewStorage[V]()
+		return inmem.NewStorage[V](), nil
+	case "bbolt":
+		stor, err := bbolt.NewStorage[V](c.DB.BBolt.File, c.DB.BBolt.Bucket)
+		if err != nil {
+			return nil, fmt.Errorf("NewStorage: %w", err)
+		}
+
+		return stor, nil
 	default:
-		log.Fatalf("Link storage %s is not supported", kind)
-		return nil
+		return nil, fmt.Errorf("NewStorage: Storage %s is not supported", c.DB.Kind)
 	}
 }

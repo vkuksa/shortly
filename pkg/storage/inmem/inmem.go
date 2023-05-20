@@ -18,32 +18,32 @@ func NewStorage[V any]() *Storage[V] {
 }
 
 // Saves data into in-memory storage
-// Returns an error, if given key or value are not valid
-func (s *Storage[V]) Set(key string, value V) error {
+// Returns an error, if given key is not valid or value can not be marshalled to json
+func (s *Storage[V]) Set(k string, v V) error {
 	if s.m == nil {
-		panic("Trying to set a value in a nil map")
+		return fmt.Errorf("set: datastore was closed")
 	}
 
-	if err := storage.ValidateKey(key); err != nil {
+	if err := storage.ValidateKey(k); err != nil {
 		return fmt.Errorf("set: %w", err)
 	}
 
-	data, err := json.Marshal(value)
+	data, err := json.Marshal(v)
 	if err != nil {
 		return fmt.Errorf("set: %w", err)
 	}
 
 	s.mut.Lock()
 	defer s.mut.Unlock()
-	s.m[key] = data
+	s.m[k] = data
 	return nil
 }
 
 // Retrieves a stored value by a given key
-// Returns an error, if no value have been found for a given key
+// Returns an error, if key is not valid or value can not be unmarsshalled from json
 func (s *Storage[V]) Get(k string, v *V) (bool, error) {
 	if s.m == nil {
-		panic("Trying to get a value from a nil map")
+		return false, fmt.Errorf("get: datastore was closed")
 	}
 
 	if err := storage.ValidateKey(k); err != nil {
@@ -57,7 +57,11 @@ func (s *Storage[V]) Get(k string, v *V) (bool, error) {
 		return false, nil
 	}
 
-	return true, json.Unmarshal(data, v)
+	if err := json.Unmarshal(data, v); err != nil {
+		return true, fmt.Errorf("get: %w", err)
+	}
+
+	return true, nil
 }
 
 // Deletes a key-value pair from a storage
@@ -65,7 +69,7 @@ func (s *Storage[V]) Get(k string, v *V) (bool, error) {
 // Returns an error if given key is not valid
 func (s *Storage[V]) Delete(k string) error {
 	if s.m == nil {
-		panic("Trying to delete a value in a nil map")
+		return fmt.Errorf("delete: datastore was closed")
 	}
 
 	if err := storage.ValidateKey(k); err != nil {

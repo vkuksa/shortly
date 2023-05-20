@@ -12,5 +12,5 @@ $ make
 # Usage
 
 ```console
-./shortly
+./bin/shortly
 ```
