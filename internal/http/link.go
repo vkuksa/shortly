@@ -2,7 +2,6 @@ package http
 
 import (
 	"net/http"
-	"text/template"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/vkuksa/shortly/assets"
@@ -15,15 +14,8 @@ func (s *Server) registerLinkRoutes(router chi.Router) {
 }
 
 func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFS(assets.All, "index.html")
-	if err != nil {
-		s.HandleError(w, r, err)
-		return
-	}
-
-	if err := tmpl.Execute(w, nil); err != nil {
-		s.HandleError(w, r, err)
-		return
+	if err := assets.RenderIndex(w, nil); err != nil {
+		s.handleError(w, r, err)
 	}
 }
 
@@ -31,7 +23,7 @@ func (s *Server) handleStoreLink(w http.ResponseWriter, r *http.Request) {
 	url := r.PostFormValue("url")
 	link, err := s.LinkService.GenerateShortenedLink(r.Context(), url)
 	if err != nil {
-		s.HandleError(w, r, err)
+		s.handleError(w, r, err)
 		return
 	}
 
@@ -39,18 +31,12 @@ func (s *Server) handleStoreLink(w http.ResponseWriter, r *http.Request) {
 		Shortened string
 		Original  string
 	}{
-		Shortened: s.URL() + "/" + link.UUID,
+		Shortened: s.url() + "/" + link.UUID,
 		Original:  link.URL,
 	}
 
-	tmpl, err := template.ParseFS(assets.All, "index.html")
-	if err != nil {
-		s.HandleError(w, r, err)
-		return
-	}
-
-	if err := tmpl.Execute(w, l); err != nil {
-		s.HandleError(w, r, err)
+	if err := assets.RenderIndex(w, l); err != nil {
+		s.handleError(w, r, err)
 		return
 	}
 }
@@ -59,12 +45,12 @@ func (s *Server) handleRedirrectLink(w http.ResponseWriter, r *http.Request) {
 	uuid := chi.URLParam(r, "uuid")
 	link, err := s.LinkService.GetOriginalLink(r.Context(), uuid)
 	if err != nil {
-		s.HandleError(w, r, err)
+		s.handleError(w, r, err)
 		return
 	}
 
 	if err = s.LinkService.AddHit(r.Context(), uuid); err != nil {
-		s.LogError(r, err)
+		s.logError(r, err)
 	}
 
 	http.Redirect(w, r, link.URL, http.StatusFound)

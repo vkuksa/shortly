@@ -11,12 +11,38 @@ import (
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	shortly "github.com/vkuksa/shortly/internal/domain"
 )
 
 const (
 	// ShutdownTimeout is the time given for outstanding requests to finish before shutdown.
 	DefaultShutdownTimeout = 10 * time.Second
+
+	promNamespace = "shortly"
+)
+
+var (
+	// Generic HTTP metrics.
+	requestCount = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: promNamespace,
+		Name:      "http_request_count",
+		Help:      "Total number of requests by route",
+	}, []string{"method", "path"})
+
+	requestSeconds = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: promNamespace,
+		Name:      "http_request_seconds",
+		Help:      "Total amount of request time by route, in seconds",
+	}, []string{"method", "path"})
+
+	errorCount = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: promNamespace,
+		Name:      "error_count",
+		Help:      "Total number of errors",
+	}, []string{"method", "path", "code", "message"})
 )
 
 type Server struct {
@@ -37,15 +63,21 @@ func NewServer() *Server {
 
 	router := chi.NewRouter()
 
-	// Add middlewares for logging, timeout and panic recovery
+	// Add middlewares for logging, timeout, panic recovery and metrics tracking
 	router.Use(middleware.Timeout(DefaultShutdownTimeout))
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.Logger)
+	router.Use(trackMetrics)
 
-	// Register handlers
+	// Register domain handlers
 	s.registerLinkRoutes(router)
 
 	s.srv.Handler = router
+
+	// Enable internal administrative endpoints.
+	go func() {
+		listenAndServeAdmin()
+	}()
 
 	return s
 }
@@ -75,15 +107,15 @@ func (s *Server) Close() error {
 
 // Port returns the TCP port for the running server.
 // This is useful in tests where we allocate a random port by using ":0".
-func (s *Server) Port() int {
+func (s *Server) port() int {
 	if s.ln == nil {
 		return 0
 	}
 	return s.ln.Addr().(*net.TCPAddr).Port
 }
 
-// URL returns the local base URL of the running server.
-func (s *Server) URL() string {
+// url returns the local base URL of the running server.
+func (s *Server) url() string {
 	// Use localhost unless a domain is specified.
 	domain := "localhost"
 	if s.Domain != "" {
@@ -94,22 +126,22 @@ func (s *Server) URL() string {
 		scheme = s.Scheme
 	}
 
-	return fmt.Sprintf("%s://%s:%d", scheme, domain, s.Port())
+	return fmt.Sprintf("%s://%s:%d", scheme, domain, s.port())
 }
 
 // Handles errors gracefully
-func (s *Server) HandleError(w http.ResponseWriter, r *http.Request, err error) {
+func (s *Server) handleError(w http.ResponseWriter, r *http.Request, err error) {
 	code, message := shortly.ErrorCode(err), shortly.ErrorMessage(err)
 
-	// TODO: track metrics
+	errorCount.WithLabelValues(r.Method, r.URL.Path, code, message).Inc()
 	// TODO: report internal errors
 
-	s.LogError(r, err)
-	http.Error(w, message, ErrorStatusCode(code))
+	s.logError(r, err)
+	http.Error(w, message, errorStatusCode(code))
 }
 
 // LogError logs an error with the HTTP route information.
-func (s *Server) LogError(r *http.Request, err error) {
+func (s *Server) logError(r *http.Request, err error) {
 	log.Printf("[http] error: %s %s: %s", r.Method, r.URL.Path, err)
 }
 
@@ -122,9 +154,30 @@ var codes = map[string]int{
 }
 
 // ErrorStatusCode returns the associated HTTP status code for a WTF error code.
-func ErrorStatusCode(code string) int {
+func errorStatusCode(code string) int {
 	if v, ok := codes[code]; ok {
 		return v
 	}
 	return http.StatusInternalServerError
+}
+
+// ListenAndServeAdmin runs an HTTP server with administrative infromation
+func listenAndServeAdmin() error {
+	h := http.NewServeMux()
+	h.Handle("/metrics", promhttp.Handler())
+	return http.ListenAndServe(":6060", h)
+}
+
+// trackMetrics is middleware for tracking the request count and timing per route.
+func trackMetrics(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Obtain path template & start time of request.
+		t := time.Now()
+
+		// Delegate to next handler in middleware chain.
+		next.ServeHTTP(w, r)
+
+		requestCount.WithLabelValues(r.Method, r.URL.Path).Inc()
+		requestSeconds.WithLabelValues(r.Method, r.URL.Path).Add(float64(time.Since(t).Seconds()))
+	})
 }
