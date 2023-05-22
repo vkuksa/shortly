@@ -9,6 +9,8 @@ on:
 jobs:
   ci:
     runs-on: 'ubuntu-22.04'
+    env:
+        CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
     steps:
       - name: 'Checkout source code'
         uses: 'actions/checkout@v3'
