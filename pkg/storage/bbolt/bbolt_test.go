@@ -14,15 +14,15 @@ import (
 var _ storage.Storage[int] = (*bbolt.Storage[int])(nil)
 
 func TestSetGetDelete(t *testing.T) {
-	s := test.MustCreateStorage[int](t, "bbolt")
-	defer test.MustCleanupStorage(t, s)
+	s, closer := test.MustCreateStorage[int](t, "bbolt")
+	defer closer()
 
 	test.SetGetDelete(t, s)
 }
 
 func TestClose(t *testing.T) {
-	s := test.MustCreateStorage[int](t, "bbolt")
-	defer test.MustCleanupStorage(t, s)
+	s, closer := test.MustCreateStorage[int](t, "bbolt")
+	defer closer()
 
 	test.Close(t, s)
 }

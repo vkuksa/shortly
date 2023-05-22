@@ -3,7 +3,6 @@ package bbolt
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	bolt "go.etcd.io/bbolt"
 
@@ -105,12 +104,4 @@ func (s *Storage[V]) Delete(k string) error {
 // Gracefull close of database
 func (s *Storage[V]) Close() error {
 	return s.db.Close()
-}
-
-// Helper function used in testing
-func (s *Storage[V]) Cleanup() error {
-	s.Close()
-
-	// Remove file from filesystem
-	return os.Remove(s.db.Path())
 }

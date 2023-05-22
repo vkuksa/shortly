@@ -12,15 +12,11 @@ import (
 var _ storage.Storage[int] = (*inmem.Storage[int])(nil)
 
 func TestSetGetDelete(t *testing.T) {
-	s := test.MustCreateStorage[int](t, "inmem")
-	defer test.MustCleanupStorage(t, s)
-
+	s, _ := test.MustCreateStorage[int](t, "inmem")
 	test.SetGetDelete(t, s)
 }
 
 func TestClose(t *testing.T) {
-	s := test.MustCreateStorage[int](t, "inmem")
-	defer test.MustCleanupStorage(t, s)
-
+	s, _ := test.MustCreateStorage[int](t, "inmem")
 	test.Close(t, s)
 }

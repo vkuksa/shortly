@@ -3,6 +3,7 @@
 package test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,41 +64,26 @@ func Close(tb testing.TB, storage storage.Storage[int]) {
 	assert.Error(tb, err)
 }
 
-func MustCreateStorage[V any](tb testing.TB, kind string) storage.Storage[V] {
+func MustCreateStorage[V any](tb testing.TB, kind string) (storage storage.Storage[V], closer func()) {
 	var err error
 	switch kind {
 	case "inmem":
-		return inmem.NewStorage[V]()
+		return inmem.NewStorage[V](), func() {}
 	case "bbolt":
 		stor, err := bbolt.NewStorage[V]("test.db", "test")
 		if err != nil {
 			break
 		}
 
-		return stor
+		return stor, func() {
+			_ = stor.Close()
+			_ = os.Remove("test.db")
+		}
 	default:
 		tb.Fatalf("Storage %s is not supported", kind)
-		return nil
+		return nil, func() {}
 	}
 
 	tb.Fatalf("Failed to create %s storage with %s", kind, err.Error())
-	return nil
-}
-
-//nolint:errcheck
-func MustCleanupStorage[V any](tb testing.TB, s storage.Storage[V]) {
-	if err := s.Close(); err != nil {
-		tb.Fatal(err)
-	}
-
-	switch s := s.(type) {
-	case *inmem.Storage[V]:
-		return
-	case *bbolt.Storage[V]:
-		s.Cleanup()
-		return
-	default:
-		tb.Fatalf("Trying to cleanup unknown storage type")
-	}
-
+	return nil, func() {}
 }
