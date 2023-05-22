@@ -34,25 +34,24 @@ func main() {
 	if err == flag.ErrHelp {
 		os.Exit(1)
 	} else if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err.Error())
 	}
 
 	// Load config
 	config, err := NewConfig(configPath)
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err.Error())
 	}
 
 	// Instantiate a new type to represent application.
 	m, err := NewMain(config)
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err.Error())
 	}
 
 	// Execute program.
 	if err := m.Run(); err != nil {
-		m.Close()
-		log.Fatalf(err.Error())
+		log.Print(err.Error())
 	}
 
 	// Wait for CTRL-C.
@@ -60,7 +59,7 @@ func main() {
 
 	// Clean up program.
 	if err := m.Close(); err != nil {
-		log.Fatalf(err.Error())
+		log.Print(err.Error())
 	}
 }
 
@@ -82,18 +81,15 @@ type Main struct {
 }
 
 func NewMain(c *Config) (*Main, error) {
-	storage, err := NewStorage[shortly.Link](c)
+	storage, err := NewStorage[shortly.Link](c.DB)
 	if err != nil {
 		return nil, fmt.Errorf("NewMain: %w", err)
 	}
 
 	service := shortener.NewService(storage)
-	server := http.NewServer()
+	server := http.NewServer(c.HTTP)
 
 	server.LinkService = service
-	server.Addr = c.HTTP.Addr
-	server.Scheme = c.HTTP.Scheme
-	server.Domain = c.HTTP.Domain
 
 	return &Main{
 		Config: c,
@@ -125,25 +121,9 @@ func (m *Main) Run() (err error) {
 }
 
 type Config struct {
-	HTTP struct {
-		Addr   string `toml:"addr"`
-		Scheme string `toml:"scheme"`
-		Domain string `toml:"domain"`
-	} `toml:"http"`
+	HTTP http.Config `toml:"http"`
 
-	DB struct {
-		Kind       string `toml:"kind"`
-		Connection struct {
-			Host     string `toml:"host"`
-			Port     int64  `toml:"port"`
-			Username string `toml:"username"`
-			Password string `toml:"password"`
-		}
-		BBolt struct {
-			File   string `toml:"file"`
-			Bucket string `toml:"bucket"`
-		} `toml:"bbolt"`
-	} `toml:"db"`
+	DB DBConfig `toml:"db"`
 }
 
 func NewConfig(filepath string) (*Config, error) {
@@ -164,18 +144,32 @@ func NewConfig(filepath string) (*Config, error) {
 	return config, nil
 }
 
-func NewStorage[V any](c *Config) (storage.Storage[V], error) {
-	switch c.DB.Kind {
+type DBConfig struct {
+	Kind       string `toml:"kind"`
+	Connection struct {
+		Host     string `toml:"host"`
+		Port     int64  `toml:"port"`
+		Username string `toml:"username"`
+		Password string `toml:"password"`
+	}
+	BBolt struct {
+		File   string `toml:"file"`
+		Bucket string `toml:"bucket"`
+	} `toml:"bbolt"`
+}
+
+func NewStorage[V any](c DBConfig) (storage.Storage[V], error) {
+	switch c.Kind {
 	case "inmem":
 		return inmem.NewStorage[V](), nil
 	case "bbolt":
-		stor, err := bbolt.NewStorage[V](c.DB.BBolt.File, c.DB.BBolt.Bucket)
+		stor, err := bbolt.NewStorage[V](c.BBolt.File, c.BBolt.Bucket)
 		if err != nil {
 			return nil, fmt.Errorf("NewStorage: %w", err)
 		}
 
 		return stor, nil
 	default:
-		return nil, fmt.Errorf("NewStorage: Storage %s is not supported", c.DB.Kind)
+		return nil, fmt.Errorf("NewStorage: Storage %s is not supported", c.Kind)
 	}
 }

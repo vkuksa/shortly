@@ -31,7 +31,7 @@ func (s *Server) handleStoreLink(w http.ResponseWriter, r *http.Request) {
 		Shortened string
 		Original  string
 	}{
-		Shortened: s.url() + "/" + link.UUID,
+		Shortened: s.URL() + "/" + link.UUID,
 		Original:  link.URL,
 	}
 

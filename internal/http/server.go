@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -11,8 +10,6 @@ import (
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	shortly "github.com/vkuksa/shortly/internal/domain"
 )
@@ -20,45 +17,26 @@ import (
 const (
 	// ShutdownTimeout is the time given for outstanding requests to finish before shutdown.
 	DefaultShutdownTimeout = 10 * time.Second
-
-	promNamespace = "shortly"
-)
-
-var (
-	// Generic HTTP metrics.
-	requestCount = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: promNamespace,
-		Name:      "http_request_count",
-		Help:      "Total number of requests by route",
-	}, []string{"method", "path"})
-
-	requestSeconds = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: promNamespace,
-		Name:      "http_request_seconds",
-		Help:      "Total amount of request time by route, in seconds",
-	}, []string{"method", "path"})
-
-	errorCount = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: promNamespace,
-		Name:      "error_count",
-		Help:      "Total number of errors",
-	}, []string{"method", "path", "code", "message"})
 )
 
 type Server struct {
 	ln  net.Listener
 	srv *http.Server
 
-	Addr   string
-	Scheme string
-	Domain string
+	conf *Config
 
 	LinkService shortly.LinkService
+
+	prom struct {
+		ln  net.Listener
+		srv *http.Server
+	}
 }
 
-func NewServer() *Server {
+func NewServer(c Config) *Server {
 	s := &Server{
-		srv: &http.Server{},
+		srv:  &http.Server{},
+		conf: &c,
 	}
 
 	router := chi.NewRouter()
@@ -67,32 +45,35 @@ func NewServer() *Server {
 	router.Use(middleware.Timeout(DefaultShutdownTimeout))
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.Logger)
-	router.Use(trackMetrics)
+
+	if c.Prometheus.Enabled {
+		initMetrics()
+		router.Use(trackMetrics)
+	}
 
 	// Register domain handlers
 	s.registerLinkRoutes(router)
 
 	s.srv.Handler = router
 
-	// Enable internal administrative endpoints.
-	go func() {
-		listenAndServeAdmin()
-	}()
-
 	return s
 }
 
 // Open validates the server options and begins listening on the bind address.
 func (s *Server) Open() (err error) {
-	if s.ln, err = net.Listen("tcp", s.Addr); err != nil {
+	// Start a separate http server for prometheus
+	if s.conf.Prometheus.Enabled {
+		if err = s.listenAndServePrometheus(); err != nil {
+			return err
+		}
+	}
+
+	if s.ln, err = net.Listen("tcp", ":"+s.conf.Port); err != nil {
 		return err
 	}
 
 	go func() {
-		err := s.srv.Serve(s.ln)
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Printf("[http] error: %s", err)
-		}
+		_ = s.srv.Serve(s.ln)
 	}()
 
 	return nil
@@ -102,12 +83,17 @@ func (s *Server) Open() (err error) {
 func (s *Server) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultShutdownTimeout)
 	defer cancel()
+
+	if s.conf.Prometheus.Enabled {
+		_ = s.prom.srv.Shutdown(ctx)
+	}
+
 	return s.srv.Shutdown(ctx)
 }
 
 // Port returns the TCP port for the running server.
 // This is useful in tests where we allocate a random port by using ":0".
-func (s *Server) port() int {
+func (s *Server) Port() int {
 	if s.ln == nil {
 		return 0
 	}
@@ -115,18 +101,18 @@ func (s *Server) port() int {
 }
 
 // url returns the local base URL of the running server.
-func (s *Server) url() string {
+func (s *Server) URL() string {
 	// Use localhost unless a domain is specified.
-	domain := "localhost"
-	if s.Domain != "" {
-		domain = s.Domain
+	host := "localhost"
+	if s.conf.Host != "" {
+		host = s.conf.Host
 	}
 	scheme := "http"
-	if s.Scheme != "" {
-		scheme = s.Scheme
+	if s.conf.Scheme != "" {
+		scheme = s.conf.Scheme
 	}
 
-	return fmt.Sprintf("%s://%s:%d", scheme, domain, s.port())
+	return fmt.Sprintf("%s://%s:%d", scheme, host, s.Port())
 }
 
 // Handles errors gracefully
@@ -161,23 +147,19 @@ func errorStatusCode(code string) int {
 	return http.StatusInternalServerError
 }
 
-// ListenAndServeAdmin runs an HTTP server with administrative infromation
-func listenAndServeAdmin() error {
+// listenAndServePrometheus runs an HTTP server with prometheus metrics
+func (s *Server) listenAndServePrometheus() (err error) {
 	h := http.NewServeMux()
 	h.Handle("/metrics", promhttp.Handler())
-	return http.ListenAndServe(":6060", h)
-}
+	s.prom.srv.Handler = h
 
-// trackMetrics is middleware for tracking the request count and timing per route.
-func trackMetrics(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Obtain path template & start time of request.
-		t := time.Now()
+	if s.prom.ln, err = net.Listen("tcp", ":"+s.conf.Prometheus.Port); err != nil {
+		return err
+	}
 
-		// Delegate to next handler in middleware chain.
-		next.ServeHTTP(w, r)
+	go func() {
+		_ = s.prom.srv.Serve(s.ln)
+	}()
 
-		requestCount.WithLabelValues(r.Method, r.URL.Path).Inc()
-		requestSeconds.WithLabelValues(r.Method, r.URL.Path).Add(float64(time.Since(t).Seconds()))
-	})
+	return nil
 }

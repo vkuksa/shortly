@@ -26,7 +26,7 @@ func MustOpenServer(tb testing.TB) *Server {
 	ls := &mock.LinkService{}
 
 	// Initialize wrapper and set test configuration settings.
-	s := &Server{Server: shortlyhttp.NewServer(), LinkService: ls}
+	s := &Server{Server: shortlyhttp.NewServer(shortlyhttp.Config{}), LinkService: ls}
 	s.Server.LinkService = ls
 
 	// Begin running test server.

@@ -84,6 +84,7 @@ func MustCreateStorage[V any](tb testing.TB, kind string) storage.Storage[V] {
 	return nil
 }
 
+//nolint:errcheck
 func MustCleanupStorage[V any](tb testing.TB, s storage.Storage[V]) {
 	if err := s.Close(); err != nil {
 		tb.Fatal(err)
