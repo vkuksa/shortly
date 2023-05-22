@@ -27,23 +27,21 @@ $ make
 # Usage
 
 ```console
-./bin/shortly
+$ ./bin/shortly
 ```
 
 # Testing
 ```console
-make test
+$ make test
 ```
 
 # Linting
 ```console
-make lint
+$ make lint
 ```
 
 # Docker compose
-``` console
-docker compose up
-```
+Supports docker-compose
 
 # Prometheus
 Supported metrics:
