@@ -27,7 +27,7 @@ type Server struct {
 
 	LinkService shortly.LinkService
 
-	prom struct {
+	Prom struct {
 		ln  net.Listener
 		srv *http.Server
 	}
@@ -49,6 +49,7 @@ func NewServer(c Config) *Server {
 	if c.Prometheus.Enabled {
 		initMetrics()
 		router.Use(trackMetrics)
+		s.Prom.srv = &http.Server{}
 	}
 
 	// Register domain handlers
@@ -85,7 +86,7 @@ func (s *Server) Close() error {
 	defer cancel()
 
 	if s.conf.Prometheus.Enabled {
-		_ = s.prom.srv.Shutdown(ctx)
+		_ = s.Prom.srv.Shutdown(ctx)
 	}
 
 	return s.srv.Shutdown(ctx)
@@ -120,7 +121,6 @@ func (s *Server) handleError(w http.ResponseWriter, r *http.Request, err error) 
 	code, message := shortly.ErrorCode(err), shortly.ErrorMessage(err)
 
 	errorCount.WithLabelValues(r.Method, r.URL.Path, code, message).Inc()
-	// TODO: report internal errors
 
 	s.logError(r, err)
 	http.Error(w, message, errorStatusCode(code))
@@ -151,14 +151,14 @@ func errorStatusCode(code string) int {
 func (s *Server) listenAndServePrometheus() (err error) {
 	h := http.NewServeMux()
 	h.Handle("/metrics", promhttp.Handler())
-	s.prom.srv.Handler = h
+	s.Prom.srv.Handler = h
 
-	if s.prom.ln, err = net.Listen("tcp", ":"+s.conf.Prometheus.Port); err != nil {
+	if s.Prom.ln, err = net.Listen("tcp", ":"+s.conf.Prometheus.Port); err != nil {
 		return err
 	}
 
 	go func() {
-		_ = s.prom.srv.Serve(s.ln)
+		_ = s.Prom.srv.Serve(s.Prom.ln)
 	}()
 
 	return nil

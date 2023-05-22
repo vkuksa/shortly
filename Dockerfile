@@ -41,6 +41,7 @@ COPY --from=build-stage /build/shortly.conf .
 
 # Expose the desired port for the application
 EXPOSE 8080
+EXPOSE 6060
 
 USER nonroot:nonroot
 
