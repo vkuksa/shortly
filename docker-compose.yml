@@ -1,13 +1,22 @@
 version: '3'
 
-services:
+networks:
   shortly:
+    driver: bridge
+
+services:
+  shortlyd:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./cmd/shortlyd/deploy/Dockerfile
     ports:
       - 8080:8080
       - 6060:6060
+    depends_on:
+      - redis
+    restart: on-failure
+    networks:
+      - shortly
 
   prometheus:
     image: prom/prometheus
@@ -15,11 +24,13 @@ services:
       - 9090:9090
     restart: unless-stopped
     volumes:
-      - ./prometheus:/etc/prometheus
+      - ./cmd/shortlyd/deploy/prometheus:/etc/prometheus
       - prometheus-data:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
     depends_on:
+      - shortlyd
+    networks:
       - shortly
 
   grafana:
@@ -28,9 +39,11 @@ services:
       - 3000:3000
     restart: unless-stopped
     volumes:
-      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./cmd/shortlyd/deploy/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
       - grafana-data:/var/lib/grafana
     depends_on:
+      - prometheus
+    networks:
       - shortly
 
   # alertmanager:
@@ -39,9 +52,9 @@ services:
   #       - 9093:9093
   #     restart: unless-stopped
   #     volumes:
-  #       - ./prometheus:/config
+  #       - ./cmd/shortlyd/deploy/prometheus:/etc/prometheus
   #       - alertmanager-data:/data
-  #     command: --config.file=/config/alertmanager.yml --log.level=debug
+  #     command: --config.file=/etc/prometheus/alertmanager.yml --log.level=debug
   #     depends_on:
   #       - shortly
 
@@ -52,6 +65,9 @@ services:
       - 6379:6379
     volumes:
       - redis-data:/data
+    restart: on-failure
+    networks:
+      - shortly
 
 
 volumes:

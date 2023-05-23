@@ -1,32 +1,18 @@
-# Go variables
-GO := go
-GOFLAGS := -v
-GOTEST := $(GO) test $(GOFLAGS)
-GOBUILD := $(GO) build $(GOFLAGS)
-GOCLEAN := $(GO) clean
-GOMOD := $(GO) mod
+run: stop up
 
-# Default target
-all: clean fetch lint test build
+mod:
+	go mod tidy
+	go mod vendor
 
-# Run tests
-test:
-	$(GOTEST) -cover ./...
+up:
+	docker compose -f docker-compose.yml up -d --build
 
-# Build the project
-build:
-	$(GOBUILD) -a -installsuffix cgo -o bin/shortly ./cmd/main.go
+stop:
+	docker compose -f docker-compose.yml stop
 
-# Clean the build artifacts
-clean:
-	$(GOCLEAN)
-	rm -f ./bin/shortly
+down:
+	docker compose -f docker-compose.yml down
 
-# Linting
-lint:
-	golangci-lint run
-
-# Fetch modules 
-fetch:
-	$(GOMOD) download
-	$(GOMOD) tidy
+# test:
+# 	docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
+# 	docker-compose -f docker-compose.test.yml down --volumes
