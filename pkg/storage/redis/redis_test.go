@@ -1,15 +1,11 @@
 package redis_test
 
-import (
-	"github.com/vkuksa/shortly/pkg/storage/redis"
-)
-
 var (
-	options = redis.Options{
-		Address:  "localhost:6379",
-		Password: "",
-		DB:       15,
-	}
+// options = redis.Options{
+// 	Address:  "localhost:6379",
+// 	Password: "",
+// 	DB:       15,
+// }
 )
 
 // TODO: think of how to test it
