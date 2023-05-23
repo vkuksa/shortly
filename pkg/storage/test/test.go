@@ -10,6 +10,9 @@ import (
 	"github.com/vkuksa/shortly/pkg/storage"
 	"github.com/vkuksa/shortly/pkg/storage/bbolt"
 	"github.com/vkuksa/shortly/pkg/storage/inmem"
+	"github.com/vkuksa/shortly/pkg/storage/redis"
+
+	goredis "github.com/go-redis/redis"
 )
 
 func SetGetDelete(tb testing.TB, storage storage.Storage[int]) {
@@ -64,13 +67,13 @@ func Close(tb testing.TB, storage storage.Storage[int]) {
 	assert.Error(tb, err)
 }
 
-func MustCreateStorage[V any](tb testing.TB, kind string) (storage storage.Storage[V], closer func()) {
+func MustCreateStorage[V any](tb testing.TB, kind string, o interface{}) (storage storage.Storage[V], closer func()) {
 	var err error
 	switch kind {
 	case "inmem":
 		return inmem.NewStorage[V](), func() {}
 	case "bbolt":
-		stor, err := bbolt.NewStorage[V]("test.db", "test")
+		stor, err := bbolt.NewStorage[V](o.(bbolt.Options))
 		if err != nil {
 			break
 		}
@@ -78,6 +81,34 @@ func MustCreateStorage[V any](tb testing.TB, kind string) (storage storage.Stora
 		return stor, func() {
 			_ = stor.Close()
 			_ = os.Remove("test.db")
+		}
+	case "redis":
+		o := o.(redis.Options)
+
+		// Create Redis client
+		client := goredis.NewClient(&goredis.Options{
+			Addr:     o.Address,
+			Password: o.Password,
+			DB:       o.DB,
+		})
+		err := client.Ping().Err()
+		if err != nil {
+			tb.Fatalf("An error occurred during testing the connection to the server: %v\n", err)
+		}
+
+		stor, err := redis.NewClient[V](o)
+		if err != nil {
+			break
+		}
+
+		return stor, func() {
+			err := client.FlushAll().Err()
+			if err != nil {
+				panic(err)
+			}
+
+			_ = client.Close()
+			_ = stor.Close()
 		}
 	default:
 		tb.Fatalf("Storage %s is not supported", kind)

@@ -33,20 +33,29 @@ services:
     depends_on:
       - shortly
 
-  alertmanager:
-      image: prom/alertmanager
-      ports:
-        - "9093:9093"
-      restart: unless-stopped
-      volumes:
-        - "./prometheus:/config"
-        - alertmanager-data:/data
-      command: --config.file=/config/alertmanager.yml --log.level=debug
-      depends_on:
-        - shortly
+  # alertmanager:
+  #     image: prom/alertmanager
+  #     ports:
+  #       - 9093:9093
+  #     restart: unless-stopped
+  #     volumes:
+  #       - ./prometheus:/config
+  #       - alertmanager-data:/data
+  #     command: --config.file=/config/alertmanager.yml --log.level=debug
+  #     depends_on:
+  #       - shortly
+
+
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+    volumes:
+      - redis-data:/data
 
 
 volumes:
   grafana-data: 
   prometheus-data: 
   alertmanager-data: 
+  redis-data:

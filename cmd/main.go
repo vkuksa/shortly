@@ -15,6 +15,7 @@ import (
 	"github.com/vkuksa/shortly/pkg/storage"
 	"github.com/vkuksa/shortly/pkg/storage/bbolt"
 	"github.com/vkuksa/shortly/pkg/storage/inmem"
+	"github.com/vkuksa/shortly/pkg/storage/redis"
 )
 
 const (
@@ -145,17 +146,9 @@ func NewConfig(filepath string) (*Config, error) {
 }
 
 type DBConfig struct {
-	Kind       string `toml:"kind"`
-	Connection struct {
-		Host     string `toml:"host"`
-		Port     int64  `toml:"port"`
-		Username string `toml:"username"`
-		Password string `toml:"password"`
-	}
-	BBolt struct {
-		File   string `toml:"file"`
-		Bucket string `toml:"bucket"`
-	} `toml:"bbolt"`
+	Kind  string        `toml:"kind"`
+	BBolt bbolt.Options `toml:"bbolt"`
+	Redis redis.Options `toml:"redis"`
 }
 
 func NewStorage[V any](c DBConfig) (storage.Storage[V], error) {
@@ -163,7 +156,14 @@ func NewStorage[V any](c DBConfig) (storage.Storage[V], error) {
 	case "inmem":
 		return inmem.NewStorage[V](), nil
 	case "bbolt":
-		stor, err := bbolt.NewStorage[V](c.BBolt.File, c.BBolt.Bucket)
+		stor, err := bbolt.NewStorage[V](c.BBolt)
+		if err != nil {
+			return nil, fmt.Errorf("NewStorage: %w", err)
+		}
+
+		return stor, nil
+	case "redis":
+		stor, err := redis.NewClient[V](c.Redis)
 		if err != nil {
 			return nil, fmt.Errorf("NewStorage: %w", err)
 		}

@@ -14,25 +14,28 @@ type Storage[V any] struct {
 	bucketName string
 }
 
-func NewStorage[V any](dsPath, bucketName string) (stor *Storage[V], err error) {
+type Options struct {
+	File   string `toml:"file"`
+	Bucket string `toml:"bucket"`
+}
+
+func NewStorage[V any](o Options) (*Storage[V], error) {
 	// Open DB
-	db, err := bolt.Open(dsPath, 0600, nil)
+	db, err := bolt.Open(o.File, 0600, nil)
 	if err != nil {
 		return nil, fmt.Errorf("NewStorage: %w", err)
 	}
 
 	// Create bucket
 	err = db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
+		_, err := tx.CreateBucketIfNotExists([]byte(o.Bucket))
 		return err
 	})
 	if err != nil {
 		return nil, fmt.Errorf("NewStorage: %w", err)
 	}
 
-	stor = &Storage[V]{db: db, bucketName: bucketName}
-
-	return stor, nil
+	return &Storage[V]{db: db, bucketName: o.Bucket}, nil
 }
 
 // Saves data into bbolt storage
@@ -59,7 +62,9 @@ func (s *Storage[V]) Set(k string, v V) error {
 }
 
 // Retrieves a stored value by a given key
-// Returns an error, if no value have been found for a given key
+// Returns a false, nil if no value have been found for a given key
+// Returns an error if it occured during retrieving of value
+// Expects keys that are not ""
 func (s *Storage[V]) Get(k string, v *V) (bool, error) {
 	if err := storage.ValidateKey(k); err != nil {
 		return false, fmt.Errorf("Get: %w", err)
@@ -88,8 +93,7 @@ func (s *Storage[V]) Get(k string, v *V) (bool, error) {
 }
 
 // Deletes a key-value pair from a storage
-// If there's no key stored, delete is no-op
-// Returns an error if given key is not valid
+// Returns an error if given key is not valid or update operation failed
 func (s *Storage[V]) Delete(k string) error {
 	if err := storage.ValidateKey(k); err != nil {
 		return fmt.Errorf("delete: %w", err)
