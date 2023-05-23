@@ -101,6 +101,15 @@ func (s *Server) Port() int {
 	return s.ln.Addr().(*net.TCPAddr).Port
 }
 
+// MetricsPort returns the TCP port for the running metrics server.
+// This is useful in tests where we allocate a random port by using ":0".
+func (s *Server) MetricsPort() int {
+	if s.Prom.ln == nil {
+		return 0
+	}
+	return s.Prom.ln.Addr().(*net.TCPAddr).Port
+}
+
 // url returns the local base URL of the running server.
 func (s *Server) URL() string {
 	// Use localhost unless a domain is specified.
@@ -113,7 +122,7 @@ func (s *Server) URL() string {
 		scheme = s.conf.Scheme
 	}
 
-	return fmt.Sprintf("%s://%s:%d", scheme, host, s.Port())
+	return fmt.Sprintf("%s://%s", scheme, host)
 }
 
 // Handles errors gracefully

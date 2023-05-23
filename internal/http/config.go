@@ -5,8 +5,10 @@ type Config struct {
 	Host   string `toml:"host"`
 	Port   string `toml:"port"`
 
-	Prometheus struct {
-		Enabled bool   `toml:"enabled"`
-		Port    string `toml:"port"`
-	} `toml:"prometheus"`
+	Prometheus PrometheusConfig `toml:"prometheus"`
+}
+
+type PrometheusConfig struct {
+	Enabled bool   `toml:"enabled"`
+	Port    string `toml:"port"`
 }

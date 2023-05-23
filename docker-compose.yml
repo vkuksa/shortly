@@ -9,14 +9,14 @@ services:
     build:
       context: .
       dockerfile: ./cmd/shortlyd/deploy/Dockerfile
+    restart: on-failure
     ports:
       - 8080:8080
       - 6060:6060
-    depends_on:
-      - redis
-    restart: on-failure
     networks:
       - shortly
+    depends_on:
+      - redis
 
   prometheus:
     image: prom/prometheus
@@ -24,7 +24,7 @@ services:
       - 9090:9090
     restart: unless-stopped
     volumes:
-      - ./cmd/shortlyd/deploy/prometheus:/etc/prometheus
+      - ./cmd/shortlyd/deploy/prom:/etc/prometheus
       - prometheus-data:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -52,12 +52,11 @@ services:
   #       - 9093:9093
   #     restart: unless-stopped
   #     volumes:
-  #       - ./cmd/shortlyd/deploy/prometheus:/etc/prometheus
+  #       - ./cmd/shortlyd/deploy/prom:/etc/prometheus
   #       - alertmanager-data:/data
   #     command: --config.file=/etc/prometheus/alertmanager.yml --log.level=debug
   #     depends_on:
   #       - shortly
-
 
   redis:
     image: redis
@@ -68,7 +67,6 @@ services:
     restart: on-failure
     networks:
       - shortly
-
 
 volumes:
   grafana-data: 

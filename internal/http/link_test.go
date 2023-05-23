@@ -44,8 +44,6 @@ func TestLinkEndpoints(t *testing.T) {
 		resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "GET", "/", nil))
 		if err != nil {
 			t.Fatal(err)
-			// We expect server error, as template will not be loaded properly during testing
-			// The main point is to see whether endpoint is present and can be accessed
 		} else if got, want := resp.StatusCode, http.StatusOK; got != want {
 			t.Fatalf("StatusCode=%v, want %v", got, want)
 		}

@@ -9,11 +9,11 @@ scrape_configs:
   - job_name: shortly
     metrics_path: /metrics
     static_configs:
-      - targets: [ 'shortly:6060' ]
+      - targets: [ 'shortlyd:6060' ]
 
-alerting:
-  alertmanagers:
-    - scheme: http
-      static_configs:
-        - targets: [ 'alertmanager:9093' ]
+# alerting:
+#   alertmanagers:
+#     - scheme: http
+#       static_configs:
+#         - targets: [ 'alertmanager:9093' ]
 
