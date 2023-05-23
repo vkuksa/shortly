@@ -20,7 +20,7 @@ jobs:
         uses: 'golangci/golangci-lint-action@v3'
 
       - name: 'Install dependencies'
-        run: 'go get .'
+        run:   make mod
 
       - name: Start Redis
         uses: superchargejs/redis-github-action@1.1.0
