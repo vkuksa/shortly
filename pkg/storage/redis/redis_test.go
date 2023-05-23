@@ -11,11 +11,7 @@ import (
 var (
 	RedisHost = "localhost"
 	RedisPort = "6379"
-	options   = redis.Options{
-		Address:  RedisHost,
-		Password: RedisPort,
-		DB:       15,
-	}
+	options   redis.Options
 )
 
 func init() {
@@ -26,6 +22,11 @@ func init() {
 	port, exists := os.LookupEnv("REDIS_PORT")
 	if exists {
 		RedisPort = port
+	}
+	options = redis.Options{
+		Address:  RedisHost + ":" + RedisPort,
+		Password: "",
+		DB:       15,
 	}
 }
 
