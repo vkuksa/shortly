@@ -1,14 +1,14 @@
-name: push
+name: main
 
 on:
   push:
     branches: [dev]
 
 jobs:
-  ci:
+  build:
     runs-on: 'ubuntu-22.04'
     env:
-        CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
+      CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
     steps:
       - name: 'Checkout source code'
         uses: 'actions/checkout@v3'
@@ -19,16 +19,16 @@ jobs:
       - name: 'Run lint'
         uses: 'golangci/golangci-lint-action@v3'
 
-      - name: 'Install dependenices'
-        run:  'go get .'
+      - name: 'Install dependencies'
+        run: 'go get .'
 
-      - name: Start Redis 
-      uses: superchargejs/redis-github-action@1.1.0
-      with:
-        redis-version: 5
+      - name: Start Redis
+        uses: superchargejs/redis-github-action@1.1.0
+        with:
+          redis-version: 5
 
       - name: 'Run coverage'
-        run:  'go test -race -coverprofile=coverage.txt -covermode=atomic ./...'
+        run: 'go test -race -coverprofile=coverage.txt -covermode=atomic ./...'
 
       - name: 'Upload coverage to Codecov'
         uses: 'codecov/codecov-action@v3'
