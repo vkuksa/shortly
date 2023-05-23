@@ -2,7 +2,7 @@
 [![License](https://img.shields.io/github/license/vkuksa/shortly)](https://github.com/vkuksa/shortly/blob/main/LICENSE)
 [![Tag](https://img.shields.io/github/v/tag/vkuksa/shortly)](https://github.com/vkuksa/shortly/tags)
 [![Go Report](https://goreportcard.com/badge/github.com/vkuksa/shortly)](https://goreportcard.com/report/github.com/vkuksa/shortly)
-[![ci](https://github.com/vkuksa/shortly/actions/workflows/ci.yaml/badge.svg)](https://github.com/vkuksa/shortly/actions/workflows/ci.yaml)
+[![ci](https://github.com/vkuksa/shortly/actions/workflows/main.yaml/badge.svg)](https://github.com/vkuksa/shortly/actions/workflows/main.yaml)
 [![Coverage](https://codecov.io/gh/vkuksa/shortly/branch/dev/graph/badge.svg)](https://codecov.io/gh/vkuksa/shortly)
 
 ---
