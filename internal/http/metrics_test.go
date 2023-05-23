@@ -2,8 +2,9 @@ package http_test
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	shortly "github.com/vkuksa/shortly/internal/domain"
@@ -65,10 +66,13 @@ func TestMetricsEndpoint(t *testing.T) {
 			t.Fatalf("StatusCode=%v, want %v", got, want)
 		}
 
-		_, err = ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)
 		}
 
+		if !strings.Contains(string(body), "http_request_count") {
+			t.Fatal("Response does not contain required metric")
+		}
 	})
 }
