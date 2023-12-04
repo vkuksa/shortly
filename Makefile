@@ -1,8 +1,9 @@
-run: stop up
+SHELL:=/bin/bash
 
-mod:
-	go mod tidy
-	go mod vendor
+.SILENT:
+.DEFAULT_GOAL := run
+
+run: down up
 
 up:
 	docker compose -f docker-compose.yml up -d --build
@@ -16,3 +17,5 @@ down:
 # test:
 # 	docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
 # 	docker-compose -f docker-compose.test.yml down --volumes
+
+.PHONY: run up stop down
