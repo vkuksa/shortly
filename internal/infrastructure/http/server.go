@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -34,6 +35,7 @@ func (s *Server) Run(ctx context.Context) error {
 		_ = s.shutdown(ctx)
 	}()
 
+	log.Printf("Starting a server at %s", s.srv.Addr)
 	if err := s.srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
