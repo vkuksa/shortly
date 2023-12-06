@@ -2,174 +2,42 @@ package main
 
 import (
 	"context"
-	"flag"
-	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
+	"syscall"
 
-	"github.com/BurntSushi/toml"
-	shortly "github.com/vkuksa/shortly/internal/domain"
-	"github.com/vkuksa/shortly/internal/http"
-	"github.com/vkuksa/shortly/internal/shortener"
-	"github.com/vkuksa/shortly/pkg/storage"
-	"github.com/vkuksa/shortly/pkg/storage/bbolt"
-	"github.com/vkuksa/shortly/pkg/storage/inmem"
-	"github.com/vkuksa/shortly/pkg/storage/redis"
-)
-
-const (
-	// DefaultConfigPath is the default path to the application configuration.
-	DefaultConfigPath = "shortly.conf"
+	"github.com/sethvargo/go-envconfig"
+	"github.com/vkuksa/shortly/internal/infrastructure/config"
 )
 
 func main() {
-	// Setup signal handlers.
 	ctx, cancel := context.WithCancel(context.Background())
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() { <-c; cancel() }()
+	defer cancel()
 
-	// Parse command line flags
-	configPath, err := parseFlags(os.Args[1:])
-	if err == flag.ErrHelp {
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		<-c
+		cancel()
+	}()
+
+	cfg := &config.AppConfig{}
+	err := envconfig.Process(ctx, cfg)
+	if err != nil {
+		slog.Error("failed to parse configuration", slog.Any("err", err.Error()))
 		os.Exit(1)
-	} else if err != nil {
-		log.Fatal(err.Error())
 	}
 
-	// Load config
-	config, err := NewConfig(configPath)
+	app, err := NewApp(cfg)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatal("NewApp: ", err.Error())
 	}
 
-	// Instantiate a new type to represent application.
-	m, err := NewMain(config)
-	if err != nil {
-		log.Fatal(err.Error())
+	if err := app.Run(ctx); err != nil {
+		log.Fatal("Run: ", err.Error())
 	}
 
-	// Execute program.
-	if err := m.Run(); err != nil {
-		log.Print(err.Error())
-	}
-
-	// Wait for CTRL-C.
-	<-ctx.Done()
-
-	// Clean up program.
-	if err := m.Close(); err != nil {
-		log.Print(err.Error())
-	}
-}
-
-func parseFlags(args []string) (configPath string, err error) {
-	fs := flag.NewFlagSet("shortly", flag.ContinueOnError)
-	fs.StringVar(&configPath, "config", DefaultConfigPath, "config path")
-	err = fs.Parse(args)
-	return
-}
-
-// Main represents the program.
-type Main struct {
-	Config *Config
-
-	Storage storage.Storage[shortly.Link]
-	Service shortly.LinkService
-
-	HTTPServer *http.Server
-}
-
-func NewMain(c *Config) (*Main, error) {
-	storage, err := NewStorage[shortly.Link](c.DB)
-	if err != nil {
-		return nil, fmt.Errorf("NewMain: %w", err)
-	}
-
-	service := shortener.NewService(storage)
-	server := http.NewServer(c.HTTP)
-
-	server.LinkService = service
-
-	return &Main{
-		Config: c,
-
-		Service:    service,
-		Storage:    storage,
-		HTTPServer: server,
-	}, nil
-}
-
-// Close gracefully stops the program.
-func (m *Main) Close() error {
-	if m.HTTPServer != nil {
-		if err := m.HTTPServer.Close(); err != nil {
-			return err
-		}
-	}
-	if m.Storage != nil {
-		if err := m.Storage.Close(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Run executes the program
-func (m *Main) Run() (err error) {
-	return m.HTTPServer.Open()
-}
-
-type Config struct {
-	HTTP http.Config `toml:"http"`
-
-	DB DBConfig `toml:"db"`
-}
-
-func NewConfig(filepath string) (*Config, error) {
-	buf, err := os.ReadFile(filepath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("config file not found: %s", filepath)
-		}
-
-		return nil, fmt.Errorf("newconfig: %w", err)
-	}
-
-	config := &Config{}
-	if err := toml.Unmarshal(buf, config); err != nil {
-		return nil, fmt.Errorf("newconfig: %w", err)
-	}
-
-	return config, nil
-}
-
-type DBConfig struct {
-	Kind  string        `toml:"kind"`
-	BBolt bbolt.Options `toml:"bbolt"`
-	Redis redis.Options `toml:"redis"`
-}
-
-func NewStorage[V any](c DBConfig) (storage.Storage[V], error) {
-	switch c.Kind {
-	case "inmem":
-		return inmem.NewStorage[V](), nil
-	case "bbolt":
-		stor, err := bbolt.NewStorage[V](c.BBolt)
-		if err != nil {
-			return nil, fmt.Errorf("NewStorage: %w", err)
-		}
-
-		return stor, nil
-	case "redis":
-		stor, err := redis.NewClient[V](c.Redis)
-		if err != nil {
-			return nil, fmt.Errorf("NewStorage: %w", err)
-		}
-
-		return stor, nil
-	default:
-		return nil, fmt.Errorf("NewStorage: Storage %s is not supported", c.Kind)
-	}
+	log.Print("Gracefull shutdown")
 }

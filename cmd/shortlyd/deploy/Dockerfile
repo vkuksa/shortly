@@ -1,32 +1,16 @@
-# syntax=docker/dockerfile:1
+FROM golang:1.21.4 AS builder
 
-# Build the application from source
-FROM golang:1.20-alpine AS build-stage
+COPY go.mod go.sum /src/
+WORKDIR /src
 
-# Set the working directory inside the container
-WORKDIR /build
+RUN go mod download
 
-# Copy the entire project directory to the container
-COPY . /build/
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -o ./bin/app ./cmd/shortlyd
 
-# Build an application
-RUN CGO_ENABLED=0 GOOS=linux go build -o ./shortlyd ./cmd/shortlyd
+# Runtime image
+FROM registry.access.redhat.com/ubi9-minimal:9.3 AS runtime
 
-# Deploy the application binary into a lean image
-FROM gcr.io/distroless/static-debian11 AS build-release-stage 
+COPY --from=builder /src/bin/app app
 
-WORKDIR /
-
-# Copy the binary
-COPY --from=build-stage /build/shortlyd .
-
-# Copy the config
-COPY --from=build-stage /build/shortly.conf .
-
-# Expose the desired port for the application
-EXPOSE 8080
-EXPOSE 6060
-
-USER nonroot:nonroot
-
-ENTRYPOINT ["./shortlyd"]
+ENTRYPOINT ["./app"]

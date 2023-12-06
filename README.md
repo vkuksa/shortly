@@ -24,20 +24,9 @@ $ git clone https://github.com/vkuksa/shortly.git && cd shortly
 $ make
 ```
 
-# Usage
-
-```console
-$ ./bin/shortly
-```
-
 # Testing
 ```console
 $ make test
-```
-
-# Linting
-```console
-$ make lint
 ```
 
 # Docker compose
