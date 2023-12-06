@@ -37,7 +37,7 @@ func NewHandler(o Options) (*Handler, error) {
 	return &Handler{db: db, bucketName: o.Bucket}, nil
 }
 
-func (s *Handler) StoreLink(ctx context.Context, link *domain.Link) error {
+func (s *Handler) StoreLink(_ context.Context, link *domain.Link) error {
 	data, err := json.Marshal(link)
 	if err != nil {
 		return fmt.Errorf("StoreLink: %w", err)
@@ -54,7 +54,7 @@ func (s *Handler) StoreLink(ctx context.Context, link *domain.Link) error {
 	return nil
 }
 
-func (s *Handler) GetLink(ctx context.Context, uuid string) (*domain.Link, error) {
+func (s *Handler) GetLink(_ context.Context, uuid string) (*domain.Link, error) {
 	var data []byte
 	err := s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(s.bucketName))

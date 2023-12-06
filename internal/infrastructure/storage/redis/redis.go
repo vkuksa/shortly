@@ -35,7 +35,7 @@ func NewClient(o Options) (*Handler, error) {
 	return &Handler{client: c}, nil
 }
 
-func (r *Handler) GetLink(ctx context.Context, uuid string) (*domain.Link, error) {
+func (r *Handler) GetLink(_ context.Context, uuid string) (*domain.Link, error) {
 	if err := repository.ValidateKey(uuid); err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (r *Handler) GetLink(ctx context.Context, uuid string) (*domain.Link, error
 	return result, nil
 }
 
-func (r *Handler) StoreLink(ctx context.Context, link *domain.Link) error {
+func (r *Handler) StoreLink(_ context.Context, link *domain.Link) error {
 	if err := repository.ValidateKey(link.UUID); err != nil {
 		return err
 	}

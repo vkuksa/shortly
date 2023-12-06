@@ -55,8 +55,8 @@ func makeMetricsServer(conf *metrics.Config) *http.Server {
 	return http.NewServer(conf.BuildAddr(), router)
 }
 
-func (a *App) Stop(ctx context.Context) error {
-	return errors.Join(a.HTTPServer.Close(ctx), a.MetricsServer.Close(ctx))
+func (app *App) Stop(ctx context.Context) error {
+	return errors.Join(app.HTTPServer.Close(ctx), app.MetricsServer.Close(ctx))
 }
 
 func (app *App) Run(ctx context.Context) (err error) {

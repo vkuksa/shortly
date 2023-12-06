@@ -19,7 +19,7 @@ func NewStorage() *Storage {
 	return &Storage{m: make(map[string][]byte)}
 }
 
-func (r *Storage) GetLink(ctx context.Context, uuid string) (*domain.Link, error) {
+func (r *Storage) GetLink(_ context.Context, uuid string) (*domain.Link, error) {
 	if err := repository.ValidateKey(uuid); err != nil {
 		return nil, fmt.Errorf("GetLink: %w", err)
 	}
@@ -39,7 +39,7 @@ func (r *Storage) GetLink(ctx context.Context, uuid string) (*domain.Link, error
 	return &result, nil
 }
 
-func (r *Storage) StoreLink(ctx context.Context, link *domain.Link) error {
+func (r *Storage) StoreLink(_ context.Context, link *domain.Link) error {
 	if err := repository.ValidateKey(link.UUID); err != nil {
 		return fmt.Errorf("StoreLink: %w", err)
 	}
