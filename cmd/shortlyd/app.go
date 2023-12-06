@@ -30,15 +30,13 @@ func NewApp(conf *config.AppConfig) (*App, error) {
 	linkController := controller.NewLinkController(linkUsecase)
 
 	return &App{
-		HTTPServer:    NewServer(conf.HTTPServer, linkController),
-		MetricsServer: NewMetricsServer(conf.MetricsServer),
+		HTTPServer:    makeServer(conf.HTTPServer, linkController),
+		MetricsServer: makeMetricsServer(conf.MetricsServer),
 	}, nil
 }
 
-func NewServer(conf *http.Config, linkController *controller.LinkController) *http.Server {
-
+func makeServer(conf *http.Config, linkController *controller.LinkController) *http.Server {
 	router := chi.NewRouter()
-
 	router.Use(middleware.Timeout(10 * time.Second))
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.Logger)
@@ -49,10 +47,9 @@ func NewServer(conf *http.Config, linkController *controller.LinkController) *ht
 	return http.NewServer(conf.BuildAddr(), router)
 }
 
-func NewMetricsServer(conf *metrics.Config) *http.Server {
+func makeMetricsServer(conf *metrics.Config) *http.Server {
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
-
 	router.Handle("/metrics", promhttp.Handler())
 
 	return http.NewServer(conf.BuildAddr(), router)

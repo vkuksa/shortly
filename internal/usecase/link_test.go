@@ -1,71 +1,91 @@
 package usecase
 
 import (
-	"testing"
+	"context"
+
+	"github.com/stretchr/testify/mock"
+	"github.com/vkuksa/shortly/internal/domain"
 )
 
-func TestLinkService(t *testing.T) {
-	// t.Run("GenerateShortenedLink", func(t *testing.T) {
-	// 	if _, err := lserv.GenerateShortenedLink(context.Background(), ""); err == nil {
-	// 		t.Fatal("expected error")
-	// 	} else if ErrorCode(err) != ErrInvalid {
-	// 		t.Fatalf("unexpected error: %#v", err)
-	// 	}
-
-	// 	url := "example.com"
-	// 	// First execution should store link object and return valid data
-	// 	link, err := lserv.GenerateShortenedLink(context.Background(), url)
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	} else if link.UUID == "" || link.CreatedAt.IsZero() || link.ExpiresAt.IsZero() {
-	// 		t.Fatal("link object not initialised")
-	// 	}
-
-	// 	prevExpiresAt := link.ExpiresAt
-	// 	// Second execution should update existing object's ExpiresAt field
-	// 	if link, err = lserv.GenerateShortenedLink(context.Background(), url); err != nil {
-	// 		t.Fatal(err)
-	// 	} else if link.ExpiresAt == prevExpiresAt {
-	// 		t.Fatal("link object not updated")
-	// 	}
-	// })
-
-	// t.Run("GetOriginalLink", func(t *testing.T) {
-	// 	if _, err := lserv.GetOriginalLink(context.Background(), ""); err == nil {
-	// 		t.Fatal("expected error")
-	// 	}
-
-	// 	uuid := "test"
-	// 	url := "example.com"
-	// 	if _, err := lserv.GetOriginalLink(context.Background(), uuid); err == nil {
-	// 		t.Fatal("expected error")
-	// 	} else if ErrorCode(err) != ErrNotFound {
-	// 		t.Fatalf("unexpected error: %#v", err)
-	// 	}
-
-	// 	lstor.Stor[uuid] = domain.Link{UUID: uuid, URL: url}
-
-	// 	if link, err := lserv.GetOriginalLink(context.Background(), uuid); err != nil {
-	// 		t.Fatal(err)
-	// 	} else if link == nil || link.URL != url || link.UUID != uuid {
-	// 		t.Fatal("invalid link retrieved")
-	// 	}
-	// })
-
-	// t.Run("Add Hit", func(t *testing.T) {
-	// 	uuid := "test"
-	// 	if err := lserv.AddHit(context.Background(), uuid); err == nil {
-	// 		t.Fatal("expected error")
-	// 	} else if ErrorCode(err) != ErrNotFound {
-	// 		t.Fatalf("unexpected error: %#v", err)
-	// 	}
-
-	// 	lstor.Stor["test"] = domain.Link{UUID: "test"}
-
-	// 	if err := lserv.AddHit(context.Background(), uuid); err != nil {
-	// 		t.Fatal(err)
-	// 	} else if lstor.Stor["test"].Count != 1 {
-	// 		t.Fatal("count was not incremented")
-	// 	}
-	// })
+type MockLinkRepository struct {
+	mock.Mock
 }
+
+func (m *MockLinkRepository) GetLink(ctx context.Context, uuid string) (*domain.Link, error) {
+	args := m.Called(ctx, uuid)
+	return args.Get(0).(*domain.Link), args.Error(1)
+}
+
+func (m *MockLinkRepository) StoreLink(ctx context.Context, link *domain.Link) error {
+	args := m.Called(ctx, link)
+	return args.Error(0)
+}
+
+// func TestLinkUseCase(t *testing.T) {
+// 	mockRepo := &MockLinkRepository{Stor: make(map[string]domain.Link)}
+// 	uc := NewLinkUseCase(mockRepo)
+// 	ctx := context.Background()
+
+// 	// Test GenerateShortenedLink
+// 	t.Run("GenerateShortenedLink", func(t *testing.T) {
+// 		// Define test cases
+// 		tests := []struct {
+// 			name        string
+// 			url         string
+// 			expectError bool
+// 			// Add other necessary fields
+// 		}{
+// 			{
+// 				name:        "Empty URL",
+// 				url:         "",
+// 				expectError: true,
+// 			},
+// 			// Add more test cases as needed
+// 		}
+
+// 		for _, tt := range tests {
+// 			t.Run(tt.name, func(t *testing.T) {
+// 				// Mock setup if necessary
+// 				// ...
+
+// 				link, err := uc.GenerateShortenedLink(ctx, tt.url)
+// 				if tt.expectError {
+// 					assert.Error(t, err)
+// 				} else {
+// 					assert.NoError(t, err)
+// 					assert.NotNil(t, link)
+// 					// Additional assertions based on expected outcome
+// 				}
+// 			})
+// 		}
+// 	})
+
+// 	// Test GetOriginalLink
+// 	t.Run("GetOriginalLink", func(t *testing.T) {
+// 		// Define test cases
+// 		tests := []struct {
+// 			name        string
+// 			uuid        string
+// 			expectError bool
+// 			// Add other necessary fields
+// 		}{
+// 			// Add test cases here
+// 		}
+
+// 		for _, tt := range tests {
+// 			t.Run(tt.name, func(t *testing.T) {
+// 				// Mock setup if necessary
+// 				// ...
+
+// 				link, err := uc.GetOriginalLink(ctx, tt.uuid)
+// 				if tt.expectError {
+// 					assert.Error(t, err)
+// 				} else {
+// 					assert.NoError(t, err)
+// 					assert.NotNil(t, link)
+// 					// Additional assertions based on expected outcome
+// 				}
+// 			})
+// 		}
+// 	})
+// }

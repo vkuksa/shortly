@@ -1,29 +1,21 @@
 package metrics_test
 
-// import (
-// 	"context"
-// 	"io"
-// 	"net/http"
-// 	"strings"
-// 	"testing"
-
-// 	shortly "github.com/vkuksa/shortly/internal/domain"
-// )
-
 // func TestMetricsEndpoint(t *testing.T) {
-// 	// Start the mocked HTTP test server.
-// 	ps := MustOpenServerWithPrometheus(t)
-// 	defer MustCloseServer(t, ps)
+// 	s := MustOpenMetricServer()
+// 	defer MustCloseServer(t, s)
+
+// 	s := MustOpenMetricServer()
+// 	defer MustCloseServer(t, s)
 
 // 	testURL := "http://example.com"
 // 	testUUID := "test"
-// 	exmpl := &shortly.Link{
+// 	exmpl := &domain.Link{
 // 		URL:  testURL,
 // 		UUID: testUUID,
 // 	}
-// 	ps.LinkService.GetOriginalLinkFn = func(ctx context.Context, uuid string) (*shortly.Link, error) {
+// 	ps.LinkService.GetOriginalLinkFn = func(ctx context.Context, uuid string) (*domain.Link, error) {
 // 		if uuid != testUUID {
-// 			return nil, shortly.NewError(shortly.ErrNotFound, "Expected")
+// 			return nil, usecase.NewError(usecase.ErrNotFound, "Expected")
 // 		}
 
 // 		return exmpl, nil
@@ -31,9 +23,9 @@ package metrics_test
 // 	ps.LinkService.AddHitFn = func(ctx context.Context, uuid string) error {
 // 		return nil
 // 	}
-// 	ps.LinkService.GenerateShortenedLinkFn = func(ctx context.Context, url string) (*shortly.Link, error) {
+// 	ps.LinkService.GenerateShortenedLinkFn = func(ctx context.Context, url string) (*domain.Link, error) {
 // 		if url != testURL {
-// 			return nil, shortly.NewError(shortly.ErrInvalid, "Expected")
+// 			return nil, usecase.NewError(usecase.ErrInvalid, "Expected")
 // 		}
 
 // 		return exmpl, nil
