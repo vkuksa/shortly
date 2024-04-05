@@ -1,50 +1,59 @@
 version: '3'
 
-networks:
-  shortly:
-    driver: bridge
-
 services:
   shortlyd:
     build:
       context: .
       dockerfile: ./cmd/shortlyd/deploy/Dockerfile
+      args:
+        GOCACHE: ${GOCACHE}
+        GOMODCACHE: ${GOMODCACHE}
+      platforms:
+        - linux/arm64
     restart: on-failure
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '4'
+          memory: '64M'
     ports:
       - 8080:8080
       - 6060:6060
-    networks:
-      - shortly
-    depends_on:
-      - redis
+    env_file: .env
 
-  prometheus:
-    image: prom/prometheus
-    ports:
-      - 9090:9090
-    restart: unless-stopped
-    volumes:
-      - ./cmd/shortlyd/deploy/prom:/etc/prometheus
-      - prometheus-data:/prometheus
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-    depends_on:
-      - shortlyd
     networks:
       - shortly
+    # depends_on:
+    #   - redis
 
-  grafana:
-    image: grafana/grafana
-    ports:
-      - 3000:3000
-    restart: unless-stopped
-    volumes:
-      - ./cmd/shortlyd/deploy/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
-      - grafana-data:/var/lib/grafana
-    depends_on:
-      - prometheus
-    networks:
-      - shortly
+  # prometheus:
+  #   image: prom/prometheus
+  #   ports:
+  #     - 9090:9090
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./cmd/shortlyd/deploy/prom:/etc/prometheus
+  #     - prometheus-data:/prometheus
+  #   command:
+  #     - --config.file=/etc/prometheus/prometheus.yml
+  #   depends_on:
+  #     - shortlyd
+  #   networks:
+  #     - shortly
+
+  # grafana:
+  #   image: grafana/grafana
+  #   ports:
+  #     - 3000:3000
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./cmd/shortlyd/deploy/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+  #     - grafana-data:/var/lib/grafana
+  #   depends_on:
+  #     - prometheus
+  #   networks:
+  #     - shortly
 
   # alertmanager:
   #     image: prom/alertmanager
@@ -58,15 +67,19 @@ services:
   #     depends_on:
   #       - shortly
 
-  redis:
-    image: redis
-    ports:
-      - 6379:6379
-    volumes:
-      - redis-data:/data
-    restart: on-failure
-    networks:
-      - shortly
+  # redis:
+  #   image: redis
+  #   ports:
+  #     - 6379:6379
+  #   volumes:
+  #     - redis-data:/data
+  #   restart: on-failure
+  #   networks:
+  #     - shortly
+
+networks:
+  shortly:
+    driver: bridge
 
 volumes:
   grafana-data: 

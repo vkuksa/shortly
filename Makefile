@@ -6,16 +6,22 @@ SHELL:=/bin/bash
 run: down up
 
 up:
-	docker compose -f docker-compose.yml up -d --build
+	docker compose up --build
+
+start: 
+	docker compose start
 
 stop:
-	docker compose -f docker-compose.yml stop
+	docker compose stop
 
 down:
-	docker compose -f docker-compose.yml down
+	docker compose down
 
-# test:
-# 	docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
-# 	docker-compose -f docker-compose.test.yml down --volumes
+test:
+	docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
+	docker compose -f docker-compose.test.yml down --volumes
 
-.PHONY: run up stop down
+lint:
+	golangci-lint run 
+
+.PHONY: run up start stop down test lint

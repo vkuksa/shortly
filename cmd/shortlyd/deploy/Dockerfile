@@ -1,32 +1,21 @@
-# syntax=docker/dockerfile:1
+FROM --platform=$BUILDPLATFORM golang:alpine AS build
 
-# Build the application from source
-FROM golang:1.20-alpine AS build-stage
+COPY go.mod go.sum /src/
+WORKDIR /src
 
-# Set the working directory inside the container
-WORKDIR /build
+ARG GOMODCACHE GOCACHE
+RUN --mount=type=cache,target="$GOMODCACHE" go mod download
 
-# Copy the entire project directory to the container
-COPY . /build/
+COPY . .
 
-# Build an application
-RUN CGO_ENABLED=0 GOOS=linux go build -o ./shortlyd ./cmd/shortlyd
+ARG TARGETOS TARGETARCH
+RUN --mount=type=cache,target="$GOMODCACHE" \
+    --mount=type=cache,target="$GOCACHE" \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -buildvcs=false -o ./bin/app ./cmd/shortlyd
 
-# Deploy the application binary into a lean image
-FROM gcr.io/distroless/static-debian11 AS build-release-stage 
 
-WORKDIR /
+FROM registry.access.redhat.com/ubi9-minimal:9.3 AS runtime
 
-# Copy the binary
-COPY --from=build-stage /build/shortlyd .
+COPY --from=build /src/bin/app app
 
-# Copy the config
-COPY --from=build-stage /build/shortly.conf .
-
-# Expose the desired port for the application
-EXPOSE 8080
-EXPOSE 6060
-
-USER nonroot:nonroot
-
-ENTRYPOINT ["./shortlyd"]
+ENTRYPOINT ["./app"]
