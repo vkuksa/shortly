@@ -20,14 +20,14 @@ func TestStorage(t *testing.T) {
 	}{
 		{
 			name:           "Store and Get valid link",
-			prepareStorage: func(s *inmem.Storage) {},
+			prepareStorage: func(_ *inmem.Storage) {},
 			uuid:           "valid-uuid",
 			link:           &domain.Link{UUID: "valid-uuid", URL: "http://example.com"},
 			expectError:    false,
 		},
 		{
 			name:           "Get non-existing link",
-			prepareStorage: func(s *inmem.Storage) {},
+			prepareStorage: func(_ *inmem.Storage) {},
 			uuid:           "non-existent-uuid",
 			link:           nil,
 			expectError:    true,

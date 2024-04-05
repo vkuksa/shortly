@@ -21,7 +21,7 @@ const (
 
 var httpServer *http.Server
 
-func makeHttpServer(conf *http.Config, linkController *rest.LinkController) *http.Server {
+func makeHTTPServer(conf *http.Config, linkController *rest.LinkController) *http.Server {
 	router := chi.NewRouter()
 	linkController.Register(router)
 	return http.NewServer(conf.BuildAddr(), router)
@@ -46,7 +46,7 @@ func TestMain(m *testing.M) {
 	linkUsecase := link.NewUseCase(linkRepository)
 	linkController := rest.NewLinkController(linkUsecase, metricsCollector)
 
-	httpServer = makeHttpServer(cfg.HTTPServerConfig, linkController)
+	httpServer = makeHTTPServer(cfg.HTTPServerConfig, linkController)
 
 	os.Exit(m.Run())
 }

@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/vkuksa/shortly/internal/link"
@@ -10,7 +11,7 @@ import (
 )
 
 type MetricsCollector interface {
-	CollectHttpError(method, path string, labels ...string) error
+	CollectHTTPError(method, path string, labels ...string) error
 }
 
 type LinkController struct {
@@ -45,7 +46,7 @@ func (c *LinkController) handleStore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c.writeJsonResponse(w, r, link, http.StatusOK)
+	c.writeJSONResponse(w, r, link, http.StatusOK)
 }
 
 func (c *LinkController) handleRedirrect(w http.ResponseWriter, r *http.Request) {
@@ -67,10 +68,10 @@ func (c *LinkController) handleRetrieve(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	c.writeJsonResponse(w, r, link, http.StatusOK)
+	c.writeJSONResponse(w, r, link, http.StatusOK)
 }
 
-func (c *LinkController) writeJsonResponse(w http.ResponseWriter, r *http.Request, obj any, status int) {
+func (c *LinkController) writeJSONResponse(w http.ResponseWriter, r *http.Request, obj any, status int) {
 	data, err := json.Marshal(obj)
 	if err != nil {
 		c.handleError(w, r, err)
@@ -78,5 +79,8 @@ func (c *LinkController) writeJsonResponse(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(status)
-	w.Write(data)
+	_, err = w.Write(data)
+	if err != nil {
+		log.Printf("[rest] error: writing json response: %s", err.Error())
+	}
 }

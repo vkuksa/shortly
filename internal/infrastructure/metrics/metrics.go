@@ -45,7 +45,7 @@ func newCollector() *collector {
 	return &collector{errorCount: ec, requestCount: rc, requestSeconds: rs}
 }
 
-func (c *collector) CollectHttpError(method, path string, labels ...string) error {
+func (c *collector) CollectHTTPError(method, path string, labels ...string) error {
 	labels = append(labels, method, path)
 	counter, err := c.errorCount.GetMetricWithLabelValues(labels...)
 	if err != nil {

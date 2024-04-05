@@ -26,7 +26,7 @@ type ChiRegisterer interface {
 	Register(router chi.Router)
 }
 
-func makeHttpServer(conf *http.Config, controllers ...ChiRegisterer) *http.Server {
+func makeHTTPServer(conf *http.Config, controllers ...ChiRegisterer) *http.Server {
 	router := chi.NewRouter()
 	router.Use(middleware.Timeout(10 * time.Second))
 	router.Use(middleware.Recoverer)
@@ -73,7 +73,7 @@ func main() {
 	linkUsecase := link.NewUseCase(linkRepository)
 	linkController := rest.NewLinkController(linkUsecase, metrics)
 
-	httpServer := makeHttpServer(cfg.HTTPServerConfig, linkController)
+	httpServer := makeHTTPServer(cfg.HTTPServerConfig, linkController)
 	metricsServer := makeMetricsServer(cfg.MetricsServerConfig)
 
 	app := NewApp(httpServer, metricsServer)
