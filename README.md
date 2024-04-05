@@ -3,18 +3,13 @@
 [![Tag](https://img.shields.io/github/v/tag/vkuksa/shortly)](https://github.com/vkuksa/shortly/tags)
 [![Go Report](https://goreportcard.com/badge/github.com/vkuksa/shortly)](https://goreportcard.com/report/github.com/vkuksa/shortly)
 [![main](https://github.com/vkuksa/shortly/actions/workflows/main.yaml/badge.svg)](https://github.com/vkuksa/shortly/actions/workflows/main.yaml)
-[![Coverage](https://codecov.io/gh/vkuksa/shortly/branch/dev/graph/badge.svg)](https://codecov.io/gh/vkuksa/shortly)
 
 ---
 
 A link shortening service.
 
-Has integration with Prometheus, Grafana and Alertmanager.
+Intention was in creation of a simple functionality showcasing usage of Clean Architecture, Prometheus, Grafana and Alertmanager.
 
-As a datastorage can utilise bbolt or store data in memory as a map.
-
-Configuration is performed via shortly.conf.
-Currently only 2 kinds of DB are supported: bbolt and inmem.
 
 # Installation
 
@@ -28,9 +23,6 @@ $ make
 ```console
 $ make test
 ```
-
-# Docker compose
-Supports docker-compose
 
 # Prometheus
 Supported metrics:

@@ -1,11 +1,11 @@
-name: upload-codecov
+name: lint
 
 on:
   push:
     branches: [dev]
 
 jobs:
-  build:
+  lint:
     runs-on: 'ubuntu-22.04'
     env:
       CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
@@ -22,9 +22,3 @@ jobs:
         uses: 'golangci/golangci-lint-action@v3'
         with:
           skip-cache: true
-
-      - name: 'Run coverage'
-        run: 'go test -race -coverprofile=coverage.txt -covermode=atomic ./...'
-
-      - name: 'Upload coverage to Codecov'
-        uses: 'codecov/codecov-action@v3'
