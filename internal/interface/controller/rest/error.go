@@ -2,7 +2,8 @@ package rest
 
 import (
 	"errors"
-	"log"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -18,14 +19,12 @@ func NewErrResponse(m string) ErrResponse {
 }
 
 func (c *LinkController) handleError(w http.ResponseWriter, r *http.Request, err error) {
+	slog.Error(fmt.Sprintf("%s\t%s", r.Method, r.URL.Path), slog.Any("component", "rest"), slog.Any("error", err))
+
 	code, message := resolveErrorCode(err), err.Error()
-
-	if err := c.metrics.CollectHTTPError(r.Method, r.URL.Path, strconv.Itoa(code), message); err != nil {
-		log.Printf("[metrics] error: collection failed: %s", err.Error())
-	}
-
-	log.Printf("[http] error: %s %s: %s", r.Method, r.URL.Path, err)
 	c.writeJSONResponse(w, r, NewErrResponse(message), code)
+
+	c.metrics.CollectHTTPError(r.Method, r.URL.Path, strconv.Itoa(code), message)
 }
 
 func resolveErrorCode(err error) int {

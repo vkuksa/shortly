@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/vkuksa/shortly/internal/domain"
 )
@@ -57,7 +57,7 @@ func (uc *UseCase) Retrieve(ctx context.Context, uuid string) (*domain.Link, err
 	}
 
 	if err = uc.repo.IncHit(ctx, uuid); err != nil {
-		log.Printf("ERROR: IncHit: %s", err.Error())
+		slog.Error("hit incrementation failed", slog.Any("error", err))
 	}
 
 	return link, nil

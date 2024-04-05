@@ -2,7 +2,7 @@ package rest
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/vkuksa/shortly/internal/link"
@@ -11,7 +11,7 @@ import (
 )
 
 type MetricsCollector interface {
-	CollectHTTPError(method, path string, labels ...string) error
+	CollectHTTPError(method, path string, labels ...string)
 }
 
 type LinkController struct {
@@ -81,6 +81,6 @@ func (c *LinkController) writeJSONResponse(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(status)
 	_, err = w.Write(data)
 	if err != nil {
-		log.Printf("[rest] error: writing json response: %s", err.Error())
+		slog.Error("writing response failed", slog.Any("component", "rest"), slog.Any("error", err))
 	}
 }

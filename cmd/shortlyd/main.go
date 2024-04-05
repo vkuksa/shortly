@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -78,8 +77,9 @@ func main() {
 
 	app := NewApp(httpServer, metricsServer)
 	if err := app.Run(ctx); err != nil {
-		log.Fatal("run: ", err.Error())
+		slog.Error("app run failed", slog.Any("error", err))
+		os.Exit(1)
 	}
 
-	log.Print("Gracefull shutdown")
+	slog.Info("Gracefull shutdown")
 }

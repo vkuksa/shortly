@@ -6,6 +6,4 @@ func NewMetricsCollector() *MetricsCollector {
 	return &MetricsCollector{}
 }
 
-func (c *MetricsCollector) CollectHTTPError(_, _ string, _ ...string) error {
-	return nil
-}
+func (c *MetricsCollector) CollectHTTPError(_, _ string, _ ...string) {}
