@@ -9,6 +9,7 @@ import (
 type DataStore interface {
 	GetLink(ctx context.Context, uuid string) (*domain.Link, error)
 	StoreLink(ctx context.Context, link *domain.Link) error
+	IncHit(ctx context.Context, uuid string) error
 }
 
 type LinkRepository struct {
@@ -33,4 +34,12 @@ func (r *LinkRepository) StoreLink(ctx context.Context, link *domain.Link) error
 	}
 
 	return r.db.StoreLink(ctx, link)
+}
+
+func (r *LinkRepository) IncHit(ctx context.Context, uuid string) error {
+	if err := ValidateKey(uuid); err != nil {
+		return err
+	}
+
+	return r.db.IncHit(ctx, uuid)
 }

@@ -43,6 +43,10 @@ func (s *Server) Run(ctx context.Context) error {
 	return nil
 }
 
+func (s *Server) Serve(rw http.ResponseWriter, req *http.Request) {
+	s.srv.Handler.ServeHTTP(rw, req)
+}
+
 func (s *Server) Close(ctx context.Context) error {
 	return s.shutdown(ctx)
 }

@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/vkuksa/shortly/internal/domain"
-	"github.com/vkuksa/shortly/internal/interface/repository"
+	"github.com/vkuksa/shortly/internal/link"
 )
 
 type Storage struct {
@@ -20,38 +20,46 @@ func NewStorage() *Storage {
 }
 
 func (r *Storage) GetLink(_ context.Context, uuid string) (*domain.Link, error) {
-	if err := repository.ValidateKey(uuid); err != nil {
-		return nil, fmt.Errorf("GetLink: %w", err)
-	}
-
 	r.mut.RLock()
 	data, found := r.m[uuid]
 	r.mut.RUnlock()
 	if !found {
-		return nil, repository.ErrValueNotFound
+		return nil, link.ErrNotFound
 	}
 
 	var result domain.Link
 	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, fmt.Errorf("GetLink: %w", err)
+		return nil, err
 	}
 
 	return &result, nil
 }
 
 func (r *Storage) StoreLink(_ context.Context, link *domain.Link) error {
-	if err := repository.ValidateKey(link.UUID); err != nil {
-		return fmt.Errorf("StoreLink: %w", err)
-	}
-
 	data, err := json.Marshal(link)
 	if err != nil {
-		return fmt.Errorf("set: %w", err)
+		return err
 	}
 
 	r.mut.Lock()
 	defer r.mut.Unlock()
 	r.m[link.UUID] = data
+	return nil
+}
+
+func (r *Storage) IncHit(ctx context.Context, uuid string) error {
+	link, err := r.GetLink(ctx, uuid)
+	if err != nil {
+		return fmt.Errorf("get link: %w", err)
+	}
+
+	link.Count++
+
+	err = r.StoreLink(ctx, link)
+	if err != nil {
+		return fmt.Errorf("store link: %w", err)
+	}
+
 	return nil
 }
 

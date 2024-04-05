@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"fmt"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -8,29 +10,48 @@ const (
 	promNamespace = "shortly"
 )
 
-var (
-	// Generic HTTP metrics.
-	requestCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+// Singleton for all metrics collection
+var Collector = newCollector()
+
+type collector struct {
+	requestCount   *prometheus.CounterVec
+	requestSeconds *prometheus.CounterVec
+	errorCount     *prometheus.CounterVec
+}
+
+func newCollector() *collector {
+	rc := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: promNamespace,
 		Name:      "http_request_count",
 		Help:      "Total number of requests by route",
 	}, []string{"method", "path"})
 
-	requestSeconds = prometheus.NewCounterVec(prometheus.CounterOpts{
+	rs := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: promNamespace,
 		Name:      "http_request_seconds",
 		Help:      "Total amount of request time by route, in seconds",
 	}, []string{"method", "path"})
 
-	ErrorCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+	ec := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: promNamespace,
 		Name:      "error_count",
 		Help:      "Total number of errors",
 	}, []string{"method", "path", "code", "message"})
-)
 
-func init() {
-	prometheus.MustRegister(requestCount)
-	prometheus.MustRegister(requestSeconds)
-	prometheus.MustRegister(ErrorCount)
+	prometheus.MustRegister(rc)
+	prometheus.MustRegister(rs)
+	prometheus.MustRegister(ec)
+
+	return &collector{errorCount: ec, requestCount: rc, requestSeconds: rs}
+}
+
+func (c *collector) CollectHttpError(method, path string, labels ...string) error {
+	labels = append(labels, method, path)
+	counter, err := c.errorCount.GetMetricWithLabelValues(labels...)
+	if err != nil {
+		return fmt.Errorf("get metric: %w", err)
+	}
+
+	counter.Inc()
+	return nil
 }

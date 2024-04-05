@@ -11,7 +11,7 @@ func Middleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 
-		requestCount.WithLabelValues(r.Method, r.URL.Path).Inc()
-		requestSeconds.WithLabelValues(r.Method, r.URL.Path).Add(float64(time.Since(t).Seconds()))
+		Collector.requestCount.WithLabelValues(r.Method, r.URL.Path).Inc()
+		Collector.requestSeconds.WithLabelValues(r.Method, r.URL.Path).Add(float64(time.Since(t).Seconds()))
 	})
 }

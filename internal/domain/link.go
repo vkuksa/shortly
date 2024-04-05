@@ -9,7 +9,6 @@ type Link struct {
 	UUID string `json:"uuid"`
 	// Original url to redirrect to
 	URL string `json:"url"`
-
 	// Amount of times that link was reddirrected
 	Count int `json:"count"`
 

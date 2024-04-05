@@ -1,25 +1,18 @@
-package usecase
+package link
 
-import (
-	"context"
+// type MockLinkRepository struct {
+// 	mock.Mock
+// }
 
-	"github.com/stretchr/testify/mock"
-	"github.com/vkuksa/shortly/internal/domain"
-)
+// func (m *MockLinkRepository) GetLink(ctx context.Context, uuid string) (*domain.Link, error) {
+// 	args := m.Called(ctx, uuid)
+// 	return args.Get(0).(*domain.Link), args.Error(1)
+// }
 
-type MockLinkRepository struct {
-	mock.Mock
-}
-
-func (m *MockLinkRepository) GetLink(ctx context.Context, uuid string) (*domain.Link, error) {
-	args := m.Called(ctx, uuid)
-	return args.Get(0).(*domain.Link), args.Error(1)
-}
-
-func (m *MockLinkRepository) StoreLink(ctx context.Context, link *domain.Link) error {
-	args := m.Called(ctx, link)
-	return args.Error(0)
-}
+// func (m *MockLinkRepository) StoreLink(ctx context.Context, link *domain.Link) error {
+// 	args := m.Called(ctx, link)
+// 	return args.Error(0)
+// }
 
 // func TestLinkUseCase(t *testing.T) {
 // 	mockRepo := &MockLinkRepository{Stor: make(map[string]domain.Link)}

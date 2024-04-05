@@ -6,6 +6,6 @@ import (
 )
 
 type AppConfig struct {
-	HTTPServer    *http.Config    `env:",prefix=HTTP_SERVER_"`
-	MetricsServer *metrics.Config `env:",prefix=METRICS_HTTP_SERVER_"`
+	HTTPServerConfig    *http.Config    `env:",prefix=HTTP_SERVER_"`
+	MetricsServerConfig *metrics.Config `env:",prefix=METRICS_HTTP_SERVER_"`
 }

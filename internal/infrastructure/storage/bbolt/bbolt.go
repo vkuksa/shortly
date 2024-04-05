@@ -3,10 +3,9 @@ package bbolt
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/vkuksa/shortly/internal/domain"
-	"github.com/vkuksa/shortly/internal/interface/repository"
+	"github.com/vkuksa/shortly/internal/link"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -23,7 +22,7 @@ type Handler struct {
 func NewHandler(o Options) (*Handler, error) {
 	db, err := bolt.Open(o.File, 0600, nil)
 	if err != nil {
-		return nil, fmt.Errorf("NewHandler: %w", err)
+		return nil, err
 	}
 
 	err = db.Update(func(tx *bolt.Tx) error {
@@ -31,7 +30,7 @@ func NewHandler(o Options) (*Handler, error) {
 		return err
 	})
 	if err != nil {
-		return nil, fmt.Errorf("NewHandler: %w", err)
+		return nil, err
 	}
 
 	return &Handler{db: db, bucketName: o.Bucket}, nil
@@ -40,7 +39,7 @@ func NewHandler(o Options) (*Handler, error) {
 func (s *Handler) StoreLink(_ context.Context, link *domain.Link) error {
 	data, err := json.Marshal(link)
 	if err != nil {
-		return fmt.Errorf("StoreLink: %w", err)
+		return err
 	}
 
 	err = s.db.Update(func(tx *bolt.Tx) error {
@@ -62,16 +61,16 @@ func (s *Handler) GetLink(_ context.Context, uuid string) (*domain.Link, error) 
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("GetLink: %w", err)
+		return nil, err
 	}
 
 	if data == nil {
-		return nil, repository.ErrValueNotFound
+		return nil, link.ErrNotFound
 	}
 
 	var result *domain.Link
 	if err = json.Unmarshal(data, result); err != nil {
-		return nil, fmt.Errorf("GetLink: %w", err)
+		return nil, err
 	}
 
 	return result, nil

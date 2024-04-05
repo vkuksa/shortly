@@ -9,6 +9,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/vkuksa/shortly/internal/domain"
 	"github.com/vkuksa/shortly/internal/interface/repository"
+	"github.com/vkuksa/shortly/internal/link"
 )
 
 type Options struct {
@@ -43,7 +44,7 @@ func (r *Handler) GetLink(_ context.Context, uuid string) (*domain.Link, error) 
 	dataString, err := r.client.Get(uuid).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			return nil, repository.ErrValueNotFound
+			return nil, link.ErrNotFound
 		}
 
 		return nil, err
