@@ -39,16 +39,16 @@ func newErrResponse(m string) errResponse {
 	return errResponse{Errors: m}
 }
 
-func (c *ErrorHandler) handleError(component string, w http.ResponseWriter, r *http.Request, err error) {
+func (h *ErrorHandler) handleError(component string, w http.ResponseWriter, r *http.Request, err error) {
 	slog.Error(fmt.Sprintf("%s\t%s", r.Method, r.URL.Path), slog.Any("component", component), slog.Any("error", err))
 
 	code, message := resolveErrorCode(err), err.Error()
-	c.writeJSONResponse(w, newErrResponse(message), code)
+	writeJSONResponse(w, newErrResponse(message), code)
 
-	c.metrics.CollectHTTPError(r.Method, r.URL.Path, strconv.Itoa(code), message)
+	h.metrics.CollectHTTPError(r.Method, r.URL.Path, strconv.Itoa(code), message)
 }
 
-func (c *ErrorHandler) writeJSONResponse(w http.ResponseWriter, obj any, status int) {
+func writeJSONResponse(w http.ResponseWriter, obj any, status int) {
 	w.WriteHeader(status)
 
 	err := json.NewEncoder(w).Encode(obj)
@@ -57,6 +57,7 @@ func (c *ErrorHandler) writeJSONResponse(w http.ResponseWriter, obj any, status 
 		return
 	}
 }
+
 func resolveErrorCode(err error) int {
 	switch {
 	case errors.Is(err, link.ErrNotFound):
