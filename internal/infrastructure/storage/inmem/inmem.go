@@ -12,14 +12,14 @@ import (
 
 type Storage struct {
 	mut sync.RWMutex
-	m   map[string][]byte
+	m   map[domain.UUID][]byte
 }
 
 func NewStorage() *Storage {
-	return &Storage{m: make(map[string][]byte)}
+	return &Storage{m: make(map[domain.UUID][]byte)}
 }
 
-func (r *Storage) GetLink(_ context.Context, uuid string) (*domain.Link, error) {
+func (r *Storage) GetLink(_ context.Context, uuid domain.UUID) (*domain.Link, error) {
 	r.mut.RLock()
 	data, found := r.m[uuid]
 	r.mut.RUnlock()
@@ -47,7 +47,7 @@ func (r *Storage) StoreLink(_ context.Context, link *domain.Link) error {
 	return nil
 }
 
-func (r *Storage) IncHit(ctx context.Context, uuid string) error {
+func (r *Storage) IncHit(ctx context.Context, uuid domain.UUID) error {
 	link, err := r.GetLink(ctx, uuid)
 	if err != nil {
 		return fmt.Errorf("get link: %w", err)

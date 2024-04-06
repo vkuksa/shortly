@@ -10,17 +10,17 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type MetricsCollector interface {
-	CollectHTTPError(method, path string, labels ...string)
+type ErrorHandler interface {
+	HandleRESTError(w http.ResponseWriter, r *http.Request, err error)
 }
 
 type LinkController struct {
-	uc      *link.UseCase
-	metrics MetricsCollector
+	uc         *link.UseCase
+	errhandler ErrorHandler
 }
 
-func NewLinkController(uc *link.UseCase, mc MetricsCollector) *LinkController {
-	return &LinkController{uc: uc, metrics: mc}
+func NewLinkController(uc *link.UseCase, eh ErrorHandler) *LinkController {
+	return &LinkController{uc: uc, errhandler: eh}
 }
 
 func (c *LinkController) Register(router chi.Router) {
@@ -36,24 +36,24 @@ type LinkRequest struct {
 func (c *LinkController) handleStore(w http.ResponseWriter, r *http.Request) {
 	var req LinkRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		c.handleError(w, r, link.ErrBadInput)
+		c.errhandler.HandleRESTError(w, r, link.ErrBadInput)
 		return
 	}
 
 	link, err := c.uc.Shorten(r.Context(), req.URL)
 	if err != nil {
-		c.handleError(w, r, err)
+		c.errhandler.HandleRESTError(w, r, err)
 		return
 	}
 
-	c.writeJSONResponse(w, r, link, http.StatusOK)
+	c.writeJSONResponse(w, link, http.StatusOK)
 }
 
-func (c *LinkController) handleRedirrect(w http.ResponseWriter, r *http.Request) {
+func (c *LinkController) handleRedirrect(w http.ResponseWriter, r *http.Request) { //TODO: should it be here? make only web-based redirrects
 	uuid := chi.URLParam(r, "uuid")
 	link, err := c.uc.Retrieve(r.Context(), uuid)
 	if err != nil {
-		c.handleError(w, r, err)
+		c.errhandler.HandleRESTError(w, r, err)
 		return
 	}
 
@@ -64,23 +64,19 @@ func (c *LinkController) handleRetrieve(w http.ResponseWriter, r *http.Request) 
 	uuid := chi.URLParam(r, "uuid")
 	link, err := c.uc.Retrieve(r.Context(), uuid)
 	if err != nil {
-		c.handleError(w, r, err)
+		c.errhandler.HandleRESTError(w, r, err)
 		return
 	}
 
-	c.writeJSONResponse(w, r, link, http.StatusOK)
+	c.writeJSONResponse(w, link, http.StatusOK)
 }
 
-func (c *LinkController) writeJSONResponse(w http.ResponseWriter, r *http.Request, obj any, status int) {
-	data, err := json.Marshal(obj)
-	if err != nil {
-		c.handleError(w, r, err)
-		return
-	}
-
+func (c *LinkController) writeJSONResponse(w http.ResponseWriter, obj any, status int) {
 	w.WriteHeader(status)
-	_, err = w.Write(data)
+
+	err := json.NewEncoder(w).Encode(obj)
 	if err != nil {
 		slog.Error("writing response failed", slog.Any("component", "rest"), slog.Any("error", err))
+		return
 	}
 }

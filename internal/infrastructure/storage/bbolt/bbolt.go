@@ -53,7 +53,7 @@ func (s *Handler) StoreLink(_ context.Context, link *domain.Link) error {
 	return nil
 }
 
-func (s *Handler) GetLink(_ context.Context, uuid string) (*domain.Link, error) {
+func (s *Handler) GetLink(_ context.Context, uuid domain.UUID) (*domain.Link, error) {
 	var data []byte
 	err := s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(s.bucketName))

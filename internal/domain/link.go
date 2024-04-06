@@ -1,12 +1,23 @@
 package domain
 
 import (
+	"encoding/base64"
 	"time"
 )
 
+type UUID string
+
+func NewUUIDfromString(str string) UUID {
+	return UUID(base64.URLEncoding.EncodeToString([]byte(str)))
+}
+
+func (u UUID) String() string {
+	return string(u)
+}
+
 type Link struct {
 	// UUID is also a shortened link
-	UUID string `json:"uuid"`
+	UUID UUID `json:"uuid"`
 	// Original url to redirrect to
 	URL string `json:"url"`
 	// Amount of times that link was reddirrected
@@ -24,9 +35,9 @@ func (l *Link) ResetExpiration() {
 	l.ExpiresAt = time.Now().Add(24 * time.Hour)
 }
 
-func NewLink(uuid, url string) *Link {
+func NewLink(url string) *Link {
 	return &Link{
-		UUID:      uuid,
+		UUID:      NewUUIDfromString(url),
 		URL:       url,
 		CreatedAt: time.Now(),
 		ExpiresAt: time.Now().Add(24 * time.Hour),

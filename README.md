@@ -37,3 +37,19 @@ Prometheus supported as datasource. Refer to `./grafana/provisioning/datasources
 Triggers upon alert of shortly_error_count with "internal" appears.
 
 ### Important: Refer to `./prometheus/alertmanager.yml` for setup of receiver.
+
+
+# Interfaces
+Implement REST and GraphQL interfaces for data fetching
+
+## REST
+Endpoints:
+    POST /links for retrieving encoded link
+	GET /links/{uuid} for retrieving link info
+	GET /{uuid} for re-dirrection   
+
+## Graphql
+Endpoint: /graphql
+Query or mutation is specified in "query" url parameter
+Query example: /graphql?query={link(uuid:"aHR0cHM6Ly93d3cuZ29vZ2xlLmNvbS9tYXBz"){uuid,url,count,createdAt,expiresAt}}
+Mutation example: /graphql?query=mutation+_{shorten(url:"https://google.com/"){uuid}}

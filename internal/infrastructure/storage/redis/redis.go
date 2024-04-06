@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/vkuksa/shortly/internal/domain"
-	"github.com/vkuksa/shortly/internal/interface/repository"
 	"github.com/vkuksa/shortly/internal/link"
 )
 
@@ -36,12 +35,8 @@ func NewClient(o Options) (*Handler, error) {
 	return &Handler{client: c}, nil
 }
 
-func (r *Handler) GetLink(_ context.Context, uuid string) (*domain.Link, error) {
-	if err := repository.ValidateKey(uuid); err != nil {
-		return nil, err
-	}
-
-	dataString, err := r.client.Get(uuid).Result()
+func (r *Handler) GetLink(_ context.Context, uuid domain.UUID) (*domain.Link, error) {
+	dataString, err := r.client.Get(uuid.String()).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return nil, link.ErrNotFound
@@ -59,16 +54,12 @@ func (r *Handler) GetLink(_ context.Context, uuid string) (*domain.Link, error) 
 }
 
 func (r *Handler) StoreLink(_ context.Context, link *domain.Link) error {
-	if err := repository.ValidateKey(link.UUID); err != nil {
-		return err
-	}
-
 	data, err := json.Marshal(link)
 	if err != nil {
 		return err
 	}
 
-	err = r.client.Set(link.UUID, string(data), 0).Err()
+	err = r.client.Set(link.UUID.String(), string(data), 0).Err()
 	if err != nil {
 		return err
 	}

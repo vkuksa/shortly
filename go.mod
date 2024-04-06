@@ -26,6 +26,7 @@ require (
 require (
 	github.com/go-chi/chi v1.5.4
 	github.com/go-redis/redis v6.15.9+incompatible
+	github.com/graphql-go/graphql v0.8.1
 	github.com/prometheus/client_golang v1.15.1
 	github.com/sethvargo/go-envconfig v0.9.0
 	github.com/stretchr/testify v1.8.2

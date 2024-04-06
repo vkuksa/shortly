@@ -15,7 +15,7 @@ import (
 
 func Test_Functional(t *testing.T) {
 	const ExpectedLocation = "https://www.google.com/"
-	var uuid string
+	var uuid domain.UUID
 
 	tests := []struct {
 		name         string

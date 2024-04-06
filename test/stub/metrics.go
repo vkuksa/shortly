@@ -1,9 +1,11 @@
 package stub
 
-type MetricsCollector struct{}
+import "net/http"
 
-func NewMetricsCollector() *MetricsCollector {
-	return &MetricsCollector{}
+type ErrorHandler struct{}
+
+func NewErrorHandler() *ErrorHandler {
+	return &ErrorHandler{}
 }
 
-func (c *MetricsCollector) CollectHTTPError(_, _ string, _ ...string) {}
+func (c *ErrorHandler) HandleRESTError(_ http.ResponseWriter, _ *http.Request, _ error) {}
