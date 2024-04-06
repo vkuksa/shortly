@@ -14,7 +14,7 @@ func TestStorage(t *testing.T) {
 	tests := []struct {
 		name           string
 		prepareStorage func(*inmem.Storage)
-		uuid           string
+		uuid           domain.UUID
 		link           *domain.Link
 		expectError    bool
 	}{

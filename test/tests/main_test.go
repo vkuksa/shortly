@@ -39,12 +39,12 @@ func newTestAppConfig() *config.AppConfig {
 func TestMain(m *testing.M) {
 	cfg := newTestAppConfig()
 
-	metricsCollector := stub.NewMetricsCollector()
+	errorHandler := stub.NewErrorHandler()
 
 	storage := inmem.NewStorage()
 	linkRepository := repository.New(storage)
 	linkUsecase := link.NewUseCase(linkRepository)
-	linkController := rest.NewLinkController(linkUsecase, metricsCollector)
+	linkController := rest.NewLinkController(linkUsecase, errorHandler)
 
 	httpServer = makeHTTPServer(cfg.HTTPServerConfig, linkController)
 

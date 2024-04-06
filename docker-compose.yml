@@ -24,8 +24,8 @@ services:
 
     networks:
       - shortly
-    # depends_on:
-    #   - redis
+    depends_on:
+      - mongodb
 
   # prometheus:
   #   image: prom/prometheus
@@ -77,6 +77,18 @@ services:
   #   networks:
   #     - shortly
 
+  mongodb:
+    image: mongo:latest
+    networks:
+      - shortly
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: pass
+    ports:
+      - "27017:27017"
+    volumes:
+      - shortly-mongodb-data:/data/db
+
 networks:
   shortly:
     driver: bridge
@@ -86,3 +98,4 @@ volumes:
   prometheus-data: 
   alertmanager-data: 
   redis-data:
+  shortly-mongodb-data:

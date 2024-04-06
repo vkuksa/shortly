@@ -2,7 +2,6 @@ package link
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -11,9 +10,9 @@ import (
 )
 
 type Repository interface {
-	GetLink(ctx context.Context, uuid string) (*domain.Link, error)
+	GetLink(ctx context.Context, uuid domain.UUID) (*domain.Link, error)
 	StoreLink(ctx context.Context, link *domain.Link) error
-	IncHit(ctx context.Context, uuid string) error
+	IncHit(ctx context.Context, uuid domain.UUID) error
 }
 
 type UseCase struct {
@@ -29,14 +28,13 @@ func (uc *UseCase) Shorten(ctx context.Context, url string) (*domain.Link, error
 		return nil, ErrBadInput
 	}
 
-	uuid := base64.URLEncoding.EncodeToString([]byte(url))
-
+	uuid := domain.NewUUIDfromString(url)
 	// Update if we already have link with given uuid
 	link, err := uc.repo.GetLink(ctx, uuid)
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return nil, fmt.Errorf("get link: %w", err)
 	} else if (err != nil && errors.Is(err, ErrNotFound)) || link == nil {
-		link = domain.NewLink(uuid, url)
+		link = domain.NewLink(url)
 	} else {
 		link.ResetExpiration()
 	}
@@ -49,14 +47,14 @@ func (uc *UseCase) Shorten(ctx context.Context, url string) (*domain.Link, error
 }
 
 func (uc *UseCase) Retrieve(ctx context.Context, uuid string) (*domain.Link, error) {
-	link, err := uc.repo.GetLink(ctx, uuid)
+	link, err := uc.repo.GetLink(ctx, domain.UUID(uuid))
 	if err != nil {
 		return nil, fmt.Errorf("GetOriginalLink: %w", err)
 	} else if link == nil {
 		return nil, ErrNotFound
 	}
 
-	if err = uc.repo.IncHit(ctx, uuid); err != nil {
+	if err = uc.repo.IncHit(ctx, domain.UUID(uuid)); err != nil {
 		slog.Error("hit incrementation failed", slog.Any("error", err))
 	}
 

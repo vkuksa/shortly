@@ -15,7 +15,9 @@ import (
 	"github.com/vkuksa/shortly/internal/infrastructure/config"
 	"github.com/vkuksa/shortly/internal/infrastructure/http"
 	"github.com/vkuksa/shortly/internal/infrastructure/metrics"
-	"github.com/vkuksa/shortly/internal/infrastructure/storage/inmem"
+	"github.com/vkuksa/shortly/internal/infrastructure/storage/mongodb"
+	"github.com/vkuksa/shortly/internal/interface/controller/errhandler"
+	"github.com/vkuksa/shortly/internal/interface/controller/gql"
 	"github.com/vkuksa/shortly/internal/interface/controller/rest"
 	"github.com/vkuksa/shortly/internal/interface/repository"
 	"github.com/vkuksa/shortly/internal/link"
@@ -67,12 +69,25 @@ func main() {
 
 	metrics := metrics.Collector
 
-	storage := inmem.NewStorage()
+	errorHandler := errhandler.NewErrorHandler(metrics)
+
+	// storage := inmem.NewStorage()
+	storage, err := mongodb.NewStorage(cfg.MongodbConnectionString)
+	if err != nil {
+		slog.Error("mongodb connection failed", slog.Any("error", err))
+		os.Exit(1)
+	}
+
 	linkRepository := repository.New(storage)
 	linkUsecase := link.NewUseCase(linkRepository)
-	linkController := rest.NewLinkController(linkUsecase, metrics)
+	restLinkController := rest.NewLinkController(linkUsecase, errorHandler)
+	gqlLinkController, err := gql.NewLinkController(linkUsecase, errorHandler)
+	if err != nil {
+		slog.Error("gql controller creation failed", slog.Any("error", err))
+		os.Exit(1)
+	}
 
-	httpServer := makeHTTPServer(cfg.HTTPServerConfig, linkController)
+	httpServer := makeHTTPServer(cfg.HTTPServerConfig, restLinkController, gqlLinkController)
 	metricsServer := makeMetricsServer(cfg.MetricsServerConfig)
 
 	app := NewApp(httpServer, metricsServer)
