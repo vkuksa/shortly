@@ -1,6 +1,5 @@
 # shortly
 [![License](https://img.shields.io/github/license/vkuksa/shortly)](https://github.com/vkuksa/shortly/blob/main/LICENSE)
-[![Tag](https://img.shields.io/github/v/tag/vkuksa/shortly)](https://github.com/vkuksa/shortly/tags)
 [![Go Report](https://goreportcard.com/badge/github.com/vkuksa/shortly)](https://goreportcard.com/report/github.com/vkuksa/shortly)
 [![lint](https://github.com/vkuksa/shortly/actions/workflows/lint.yaml/badge.svg)](https://github.com/vkuksa/shortly/actions/workflows/lint.yaml)
 
