@@ -8,7 +8,7 @@
 
 A link shortening service.
 
-Intention was in creation of a simple functionality showcasing usage of Clean Architecture, Prometheus, Grafana and Alertmanager.
+Intention was in creation of a simple functionality showcasing usage of Clean Architecture, Prometheus, Grafana and Alertmanager, and different types of storages.
 
 
 # Installation
@@ -53,3 +53,8 @@ Endpoint: /graphql
 Query or mutation is specified in "query" url parameter
 Query example: /graphql?query={link(uuid:"aHR0cHM6Ly93d3cuZ29vZ2xlLmNvbS9tYXBz"){uuid,url,count,createdAt,expiresAt}}
 Mutation example: /graphql?query=mutation+_{shorten(url:"https://google.com/"){uuid}}
+
+# Storages
+
+## Mongodb
+Uses index creation for efficient lookup over uuid field

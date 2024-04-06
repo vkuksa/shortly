@@ -15,7 +15,7 @@ import (
 	"github.com/vkuksa/shortly/internal/infrastructure/config"
 	"github.com/vkuksa/shortly/internal/infrastructure/http"
 	"github.com/vkuksa/shortly/internal/infrastructure/metrics"
-	"github.com/vkuksa/shortly/internal/infrastructure/storage/inmem"
+	"github.com/vkuksa/shortly/internal/infrastructure/storage/mongodb"
 	"github.com/vkuksa/shortly/internal/interface/controller/errhandler"
 	"github.com/vkuksa/shortly/internal/interface/controller/gql"
 	"github.com/vkuksa/shortly/internal/interface/controller/rest"
@@ -71,7 +71,13 @@ func main() {
 
 	errorHandler := errhandler.NewErrorHandler(metrics)
 
-	storage := inmem.NewStorage()
+	// storage := inmem.NewStorage()
+	storage, err := mongodb.NewStorage(cfg.MongodbConnectionString)
+	if err != nil {
+		slog.Error("mongodb connection failed", slog.Any("error", err))
+		os.Exit(1)
+	}
+
 	linkRepository := repository.New(storage)
 	linkUsecase := link.NewUseCase(linkRepository)
 	restLinkController := rest.NewLinkController(linkUsecase, errorHandler)

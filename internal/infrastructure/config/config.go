@@ -6,6 +6,7 @@ import (
 )
 
 type AppConfig struct {
-	HTTPServerConfig    *http.Config    `env:",prefix=HTTP_SERVER_"`
-	MetricsServerConfig *metrics.Config `env:",prefix=METRICS_HTTP_SERVER_"`
+	HTTPServerConfig        *http.Config    `env:",prefix=HTTP_SERVER_"`
+	MetricsServerConfig     *metrics.Config `env:",prefix=METRICS_HTTP_SERVER_"`
+	MongodbConnectionString string          `env:"MONGODB_CONNECTION_STRING"`
 }
