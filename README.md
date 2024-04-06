@@ -58,3 +58,6 @@ Mutation example: /graphql?query=mutation+_{shorten(url:"https://google.com/"){u
 
 ## Mongodb
 Uses index creation for efficient lookup over uuid field
+
+## Inmem
+Using SwissMap https://github.com/dolthub/swiss as a main storage

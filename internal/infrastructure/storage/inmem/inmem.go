@@ -8,20 +8,22 @@ import (
 
 	"github.com/vkuksa/shortly/internal/domain"
 	"github.com/vkuksa/shortly/internal/link"
+
+	"github.com/dolthub/swiss"
 )
 
 type Storage struct {
 	mut sync.RWMutex
-	m   map[domain.UUID][]byte
+	m   *swiss.Map[domain.UUID, []byte]
 }
 
 func NewStorage() *Storage {
-	return &Storage{m: make(map[domain.UUID][]byte)}
+	return &Storage{m: swiss.NewMap[domain.UUID, []byte](0)}
 }
 
 func (r *Storage) GetLink(_ context.Context, uuid domain.UUID) (*domain.Link, error) {
 	r.mut.RLock()
-	data, found := r.m[uuid]
+	data, found := r.m.Get(uuid)
 	r.mut.RUnlock()
 	if !found {
 		return nil, link.ErrNotFound
@@ -43,7 +45,7 @@ func (r *Storage) StoreLink(_ context.Context, link *domain.Link) error {
 
 	r.mut.Lock()
 	defer r.mut.Unlock()
-	r.m[link.UUID] = data
+	r.m.Put(link.UUID, data)
 	return nil
 }
 
