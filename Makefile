@@ -2,6 +2,8 @@ SHELL:=/bin/bash
 
 .SILENT:
 .DEFAULT_GOAL := run
+# GOCACHE := 
+# GOMODCACHE := 
 
 run: down up
 

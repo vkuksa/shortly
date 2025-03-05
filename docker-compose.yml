@@ -1,29 +1,19 @@
-version: '3'
-
 services:
   shortlyd:
     build:
       context: .
-      dockerfile: ./cmd/shortlyd/deploy/Dockerfile
-      args:
-        GOCACHE: ${GOCACHE}
-        GOMODCACHE: ${GOMODCACHE}
+      dockerfile: ./Dockerfile
+      # args:
+      #   GOCACHE: ${GOCACHE}
+      #   GOMODCACHE: ${GOMODCACHE}
       platforms:
-        - linux/arm64
-    restart: on-failure
-    deploy:
-      replicas: 1
-      resources:
-        limits:
-          cpus: '4'
-          memory: '64M'
+        - linux/amd64
     ports:
       - 8080:8080
-      - 6060:6060
+      # - 6060:6060
     env_file: .env
-
     networks:
-      - shortly
+      - shortly-net
     depends_on:
       - mongodb
 
@@ -80,22 +70,19 @@ services:
   mongodb:
     image: mongo:latest
     networks:
-      - shortly
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: pass
+      - shortly-net
     ports:
-      - "27017:27017"
+      - 27017:27017
     volumes:
       - shortly-mongodb-data:/data/db
 
 networks:
-  shortly:
+  shortly-net:
     driver: bridge
 
 volumes:
-  grafana-data: 
-  prometheus-data: 
-  alertmanager-data: 
-  redis-data:
+  # grafana-data: 
+  # prometheus-data: 
+  # alertmanager-data: 
+  # redis-data:
   shortly-mongodb-data:

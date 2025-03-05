@@ -2,58 +2,94 @@ package inmem_test
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/vkuksa/shortly/internal/domain"
+	"github.com/google/uuid"
+
 	"github.com/vkuksa/shortly/internal/infrastructure/storage/inmem"
+	"github.com/vkuksa/shortly/internal/link"
 )
 
 func TestStorage(t *testing.T) {
-	tests := []struct {
-		name           string
-		prepareStorage func(*inmem.Storage)
-		uuid           domain.UUID
-		link           *domain.Link
-		expectError    bool
-	}{
-		{
-			name:           "Store and Get valid link",
-			prepareStorage: func(_ *inmem.Storage) {},
-			uuid:           "valid-uuid",
-			link:           &domain.Link{UUID: "valid-uuid", URL: "http://example.com"},
-			expectError:    false,
-		},
-		{
-			name:           "Get non-existing link",
-			prepareStorage: func(_ *inmem.Storage) {},
-			uuid:           "non-existent-uuid",
-			link:           nil,
-			expectError:    true,
-		},
+	ctx := context.Background()
+	storage := inmem.NewStorage()
+
+	l := link.ShortenedLink{
+		Id:        uuid.New().String(),
+		Shortened: "short1",
+		Original:  "original1",
+		Hits:      0,
+		CreatedAt: time.Now(),
+		ExpiresAt: time.Now().Add(24 * time.Hour),
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			storage := inmem.NewStorage()
-			tt.prepareStorage(storage)
+	t.Run("Store and Get", func(t *testing.T) {
+		testLink := l
+		if err := storage.Store(ctx, &testLink); err != nil {
+			t.Fatalf("Store() error = %v", err)
+		}
 
-			if tt.link != nil {
-				err := storage.StoreLink(context.Background(), tt.link)
-				assert.Equal(t, tt.expectError, err != nil, "StoreLink() error")
-			}
+		got, err := storage.Get(ctx, testLink.Shortened)
+		if err != nil {
+			t.Fatalf("Get() error = %v", err)
+		}
 
-			got, err := storage.GetLink(context.Background(), tt.uuid)
-			if tt.expectError {
-				assert.Error(t, err, "GetLink() expected error")
-			} else {
-				assert.NoError(t, err, "GetLink() unexpected error")
-				assert.NotNil(t, got, "GetLink() expected a non-nil result")
-				gotBytes, _ := json.Marshal(got)
-				wantBytes, _ := json.Marshal(tt.link)
-				assert.Equal(t, string(wantBytes), string(gotBytes), "GetLink() result mismatch")
-			}
-		})
-	}
+		if got.Id != testLink.Id {
+			t.Errorf("Get() got link ID = %v, want %v", got.Id, testLink.Id)
+		}
+		if got.Original != testLink.Original {
+			t.Errorf("Get() got link Original = %v, want %v", got.Original, testLink.Original)
+		}
+		if got.Hits != testLink.Hits {
+			t.Errorf("Get() got link Hits = %v, want %v", got.Hits, testLink.Hits)
+		}
+	})
+
+	t.Run("AddHit increments link hits", func(t *testing.T) {
+		testLink := l
+		err := storage.AddHit(ctx, testLink.Id)
+		if err != nil {
+			t.Fatalf("AddHit() error = %v", err)
+		}
+
+		got, err := storage.Get(ctx, testLink.Shortened)
+		if err != nil {
+			t.Fatalf("Get() error = %v", err)
+		}
+
+		// We started at 0, so we expect 1 now
+		if got.Hits != (testLink.Hits + 1) {
+			t.Errorf("Hits after AddHit() = %v, want %v", got.Hits, testLink.Hits+1)
+		}
+	})
+
+	t.Run("UpdateExpiration changes link expiration", func(t *testing.T) {
+		testLink := l
+		newExpiration := time.Now().Add(48 * time.Hour)
+		err := storage.UpdateExpiration(ctx, testLink.Id, newExpiration)
+		if err != nil {
+			t.Fatalf("UpdateExpiration() error = %v", err)
+		}
+
+		got, err := storage.Get(ctx, testLink.Shortened)
+		if err != nil {
+			t.Fatalf("Get() error = %v", err)
+		}
+
+		// Compare times with a tolerance, or use .Equal if you want an exact match
+		if !got.ExpiresAt.Equal(newExpiration) {
+			t.Errorf("ExpiresAt after UpdateExpiration() = %v, want %v", got.ExpiresAt, newExpiration)
+		}
+	})
+
+	t.Run("Get non-existent link returns ErrNotFound", func(t *testing.T) {
+		_, err := storage.Get(ctx, "does-not-exist")
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+		if err != link.ErrNotFound {
+			t.Fatalf("expected ErrNotFound, got %v", err)
+		}
+	})
 }

@@ -1,9 +1,0 @@
-groups:
-  - name: ServerError
-    rules:
-      - alert: InternalServerError
-        expr: shortly_error_count{code="internal"} > 1
-        labels:
-          severity: warn
-        annotations:
-          summary: 'Internal server error'
