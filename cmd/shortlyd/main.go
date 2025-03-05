@@ -1,13 +1,28 @@
 package main
 
 import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/vkuksa/shortly/internal/app"
 	"github.com/vkuksa/shortly/internal/infrastructure/config"
 )
 
 func main() {
-	app.New(
+	a := app.New(
 		config.NewMongo(),
 		config.NewServer(),
-	).Run()
+	)
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		<-ctx.Done()
+		a.Stop(ctx)
+	}()
+
+	a.Run()
 }

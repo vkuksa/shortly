@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/vkuksa/shortly/internal/infrastructure/http"
@@ -18,27 +19,31 @@ func RegisterServer(lifecycle fx.Lifecycle, shutdowner fx.Shutdowner, server htt
 	controller.Register(router)
 
 	lifecycle.Append(fx.Hook{
-		OnStart: func(context.Context) error {
+		OnStart: func(ctx context.Context) error {
 			go func() {
 				if err := server.Run(); err != nil {
+					// Properly log the error instead of just calling shutdown
+					// Ensure shutdown is only called if it's an actual server error
+					slog.Info("Server exited with error", slog.Any("error", err))
 					shutdowner.Shutdown()
 				}
 			}()
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
+			slog.Info("Shutting down server...")
 			return server.Shutdown(ctx)
 		},
 	})
 }
 
-func RegisterMongoDBClient(lifecycle fx.Lifecycle, client *mongo.Client) {
+func RegisterMongoDBClient(lifecycle fx.Lifecycle, db *mongo.Database) {
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			return client.Ping(ctx, nil)
+			return db.Client().Ping(ctx, nil)
 		},
 		OnStop: func(ctx context.Context) error {
-			return client.Disconnect(ctx)
+			return db.Client().Disconnect(ctx)
 		},
 	})
 }

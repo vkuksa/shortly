@@ -12,7 +12,7 @@ import (
 )
 
 type App struct {
-	components fx.Option
+	*fx.App
 }
 
 func New(
@@ -25,6 +25,7 @@ func New(
 			fx.Annotate(serverConfig, fx.As(new(http.ServerConfig))),
 		),
 		fx.Provide(
+			mongodb.NewDatabase,
 			fx.Annotate(mongodb.NewStorage, fx.As(new(link.Repository))),
 			fx.Annotate(encoder.NewBase64, fx.As(new(link.Encoder))),
 			link.NewFactory,
@@ -34,18 +35,10 @@ func New(
 		),
 		fx.Invoke(
 			RegisterServer,
-			// RegisterMongoDBClient,
+			RegisterMongoDBClient,
 		),
 	)
 	return App{
-		components: components,
+		App: fx.New(components),
 	}
-}
-
-func (a App) Run() {
-	fx.New(a.components).Run()
-}
-
-func (a App) Validate() error {
-	return fx.ValidateApp(a.components)
 }

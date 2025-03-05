@@ -20,23 +20,11 @@ type Storage struct {
 	collection *mongo.Collection
 }
 
-type Config interface {
-	ConnectionString() string
-	DB() string
-}
+func NewStorage(db *mongo.Database) (*Storage, error) {
+	coll := db.Collection(collectionName)
 
-func NewStorage(config Config) (*Storage, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.ConnectionString()))
-	if err != nil {
-		return nil, fmt.Errorf("mongo.Connect: %w", err)
-	}
-
-	coll := client.Database(config.DB()).Collection(collectionName)
-
-	// Create indexes if necessary
 	if err := createIndexes(ctx, coll); err != nil {
 		return nil, fmt.Errorf("createIndexes: %w", err)
 	}

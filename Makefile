@@ -20,8 +20,9 @@ down:
 	docker compose down
 
 test:
-	docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
-	docker compose -f docker-compose.test.yml down --volumes
+	docker compose -f test/docker-compose.yml up --build --abort-on-container-exit
+	docker compose -f test/docker-compose.yml stop shortly-svc
+	docker compose -f test/docker-compose.yml down --volumes
 
 lint:
 	golangci-lint run 
