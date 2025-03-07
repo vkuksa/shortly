@@ -39,7 +39,7 @@ func (u *ShortenedLink) Hit(ctx context.Context) error {
 	return nil
 }
 
-func NewShortenedLink(ctx context.Context, repo Repository, original, shortened string) *ShortenedLink {
+func NewShortenedLink(repo Repository, original, shortened string) *ShortenedLink {
 	now := time.Now()
 	return &ShortenedLink{
 		Id:         uuid.New().String(),

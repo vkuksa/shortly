@@ -26,7 +26,7 @@ func (f Factory) NewLinkFromOriginal(ctx context.Context, original string) (*Sho
 	link, err := f.getLink(ctx, shortened)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) || link == nil {
-			link = NewShortenedLink(ctx, f.repo, original, shortened)
+			link = NewShortenedLink(f.repo, original, shortened)
 			if err := f.repo.Store(ctx, link); err != nil {
 				return nil, fmt.Errorf("store link: %w", err)
 			}

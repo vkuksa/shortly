@@ -21,7 +21,7 @@ func main() {
 
 	go func() {
 		<-ctx.Done()
-		a.Stop(ctx)
+		_ = a.Stop(ctx)
 	}()
 
 	a.Run()

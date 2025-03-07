@@ -19,13 +19,11 @@ func RegisterServer(lifecycle fx.Lifecycle, shutdowner fx.Shutdowner, server htt
 	controller.Register(router)
 
 	lifecycle.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
+		OnStart: func(context.Context) error {
 			go func() {
 				if err := server.Run(); err != nil {
-					// Properly log the error instead of just calling shutdown
-					// Ensure shutdown is only called if it's an actual server error
 					slog.Info("Server exited with error", slog.Any("error", err))
-					shutdowner.Shutdown()
+					_ = shutdowner.Shutdown()
 				}
 			}()
 			return nil
@@ -43,6 +41,7 @@ func RegisterMongoDBClient(lifecycle fx.Lifecycle, db *mongo.Database) {
 			return db.Client().Ping(ctx, nil)
 		},
 		OnStop: func(ctx context.Context) error {
+			slog.Info("Shutting down mongo connection...")
 			return db.Client().Disconnect(ctx)
 		},
 	})

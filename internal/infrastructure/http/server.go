@@ -1,7 +1,6 @@
 package http
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -42,12 +41,4 @@ func (s *Server) Run() error {
 	}
 
 	return nil
-}
-
-func (s *Server) Shutdown(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, DefaultShutdownTimeout)
-	defer cancel()
-
-	slog.Info("Server shutdown...")
-	return s.Shutdown(ctx)
 }

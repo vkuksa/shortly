@@ -29,7 +29,7 @@ func NewStorage() *Storage {
 }
 
 // Get retrieves a ShortenedLink by its short string.
-func (s *Storage) Get(ctx context.Context, shortened string) (*link.ShortenedLink, error) {
+func (s *Storage) Get(_ context.Context, shortened string) (*link.ShortenedLink, error) {
 	s.mut.RLock()
 	defer s.mut.RUnlock()
 
@@ -45,7 +45,7 @@ func (s *Storage) Get(ctx context.Context, shortened string) (*link.ShortenedLin
 }
 
 // Store persists a ShortenedLink in memory, updating both indexes.
-func (s *Storage) Store(ctx context.Context, l *link.ShortenedLink) error {
+func (s *Storage) Store(_ context.Context, l *link.ShortenedLink) error {
 	s.mut.Lock()
 	defer s.mut.Unlock()
 
@@ -56,7 +56,7 @@ func (s *Storage) Store(ctx context.Context, l *link.ShortenedLink) error {
 }
 
 // AddHit increments the Hits counter of the link identified by its UUID.
-func (s *Storage) AddHit(ctx context.Context, id string) error {
+func (s *Storage) AddHit(_ context.Context, id string) error {
 	s.mut.Lock()
 	defer s.mut.Unlock()
 
@@ -71,7 +71,7 @@ func (s *Storage) AddHit(ctx context.Context, id string) error {
 }
 
 // UpdateExpiration sets a new expiration date/time for the link identified by UUID.
-func (s *Storage) UpdateExpiration(ctx context.Context, id string, expiresAt time.Time) error {
+func (s *Storage) UpdateExpiration(_ context.Context, id string, expiresAt time.Time) error {
 	s.mut.Lock()
 	defer s.mut.Unlock()
 

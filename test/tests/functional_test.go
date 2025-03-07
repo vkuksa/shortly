@@ -82,7 +82,8 @@ func Test_Functional(t *testing.T) {
 			assert.NoError(t, err, "new request")
 
 			client := &http.Client{
-				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				// Prevent client from following redirects.
+				CheckRedirect: func(*http.Request, []*http.Request) error {
 					return http.ErrUseLastResponse
 				},
 			}

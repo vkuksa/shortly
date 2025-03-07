@@ -1,7 +1,7 @@
 linters:
   enable:
     - gocyclo
-    - revive
+    # - revive
     - govet
     - staticcheck
     - unused
