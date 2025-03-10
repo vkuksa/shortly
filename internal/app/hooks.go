@@ -8,6 +8,7 @@ import (
 	"github.com/vkuksa/shortly/internal/infrastructure/http"
 	"github.com/vkuksa/shortly/internal/interface/controller/rest"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/fx"
 )
 
@@ -43,6 +44,15 @@ func RegisterMongoDBClient(lifecycle fx.Lifecycle, db *mongo.Database) {
 		OnStop: func(ctx context.Context) error {
 			slog.Info("Shutting down mongo connection...")
 			return db.Client().Disconnect(ctx)
+		},
+	})
+}
+
+func RegisterTracer(lifecycle fx.Lifecycle, tracer *trace.TracerProvider) {
+	lifecycle.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			slog.Info("Shutting down tracer...")
+			return tracer.Shutdown(ctx)
 		},
 	})
 }

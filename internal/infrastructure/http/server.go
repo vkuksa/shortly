@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/vkuksa/shortly/internal/infrastructure/trace"
 )
 
 const (
@@ -28,6 +29,7 @@ func NewServer(cfg ServerConfig) Server {
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
+	router.Use(trace.Middleware)
 	return Server{&http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port()),
 		Handler: router,

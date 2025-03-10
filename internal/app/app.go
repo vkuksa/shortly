@@ -5,6 +5,7 @@ import (
 	"github.com/vkuksa/shortly/internal/infrastructure/encoder"
 	"github.com/vkuksa/shortly/internal/infrastructure/http"
 	"github.com/vkuksa/shortly/internal/infrastructure/storage/mongodb"
+	"github.com/vkuksa/shortly/internal/infrastructure/trace"
 	"github.com/vkuksa/shortly/internal/interface/controller/rest"
 	"github.com/vkuksa/shortly/internal/link"
 	"github.com/vkuksa/shortly/internal/usecase"
@@ -26,6 +27,7 @@ func New(
 		),
 		fx.Provide(
 			mongodb.NewDatabase,
+			trace.InitTracer,
 			fx.Annotate(mongodb.NewStorage, fx.As(new(link.Repository))),
 			fx.Annotate(encoder.NewBase64, fx.As(new(link.Encoder))),
 			link.NewFactory,
@@ -34,6 +36,7 @@ func New(
 			http.NewServer,
 		),
 		fx.Invoke(
+			RegisterTracer,
 			RegisterServer,
 			RegisterMongoDBClient,
 		),
