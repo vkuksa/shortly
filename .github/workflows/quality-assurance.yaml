@@ -18,6 +18,11 @@ jobs:
         with:
           go-version: '1.24'
 
+      - name: Install golangci-lint
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
       - name: Run lint
         run: make lint
 
@@ -26,6 +31,13 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
+
+      - name: Set up test env
+        run: | 
+          cd test
+          echo "$TEST_ENV" > .env
+        env:
+          TEST_ENV: ${{ secrets.TEST_ENV }}
 
       - name: Verify Docker & Compose Version
         run: |
