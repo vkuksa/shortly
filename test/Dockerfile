@@ -7,6 +7,9 @@ RUN set -ex; \
 WORKDIR /src
 
 COPY go.mod go.sum ./
+
+ARG GOMODCACHE GOCACHE
+RUN --mount=type=cache,target="$GOMODCACHE" go mod download
 RUN go mod download
 
 COPY . .

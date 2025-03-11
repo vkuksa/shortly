@@ -32,17 +32,17 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v3
 
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
       - name: Set up test env
         run: | 
           cd test
           echo "$TEST_ENV" > .env
         env:
           TEST_ENV: ${{ secrets.TEST_ENV }}
-
-      - name: Verify Docker & Compose Version
-        run: |
-          docker --version
-          docker compose version
 
       - name: Run tests
         run: make test

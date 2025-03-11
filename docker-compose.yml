@@ -3,9 +3,9 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-      # args:
-      #   GOCACHE: ${GOCACHE}
-      #   GOMODCACHE: ${GOMODCACHE}
+      args:
+        GOCACHE: ${GOCACHE}
+        GOMODCACHE: ${GOMODCACHE}
       platforms:
         - linux/amd64
     ports:
