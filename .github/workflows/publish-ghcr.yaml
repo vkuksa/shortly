@@ -1,0 +1,16 @@
+name: Docker image CI for GHCR
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-publish:
+    runs-on: 'ubuntu-24.04'
+    steps:
+      - uses: 'actions/checkout@v3'
+      - name: 'Build and push image'
+        run: |
+          docker login --username vkuksa --password ${{secrets.GH_PAT}}
+          docker build . --tag ghcr.io/vkuksa/shortly:latest
+          docker push ghcr.io/vkuksa/shortly:latest
