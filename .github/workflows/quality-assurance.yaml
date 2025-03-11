@@ -1,0 +1,48 @@
+name: Quality Assurance
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev]
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Install golangci-lint
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - name: Run lint
+        run: make lint
+
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Set up test env
+        run: | 
+          cd test
+          echo "$TEST_ENV" > .env
+        env:
+          TEST_ENV: ${{ secrets.TEST_ENV }}
+
+      - name: Run tests
+        run: make test

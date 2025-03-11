@@ -1,0 +1,38 @@
+services:
+  shortlyd-tests:
+    build:
+      context: ..
+      dockerfile: test/Dockerfile
+      args:
+        GOCACHE: ${GOCACHE}
+        GOMODCACHE: ${GOMODCACHE}
+    networks:
+      - shortly-tests
+    depends_on:
+      - shortly-svc
+      
+  shortly-svc:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        GOCACHE: ${GOCACHE}
+        GOMODCACHE: ${GOMODCACHE}
+      platforms:
+        - linux/amd64
+    env_file: .env
+    networks:
+      - shortly-tests
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:latest
+    networks:
+      - shortly-tests
+    ports:
+      - 27017:27017
+
+networks:
+  shortly-tests:
+    driver: bridge

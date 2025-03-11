@@ -1,31 +1,33 @@
-version: '3'
-
 services:
   shortlyd:
     build:
       context: .
-      dockerfile: ./cmd/shortlyd/deploy/Dockerfile
+      dockerfile: ./Dockerfile
       args:
         GOCACHE: ${GOCACHE}
         GOMODCACHE: ${GOMODCACHE}
       platforms:
-        - linux/arm64
-    restart: on-failure
-    deploy:
-      replicas: 1
-      resources:
-        limits:
-          cpus: '4'
-          memory: '64M'
+        - linux/amd64
     ports:
       - 8080:8080
-      - 6060:6060
+      # - 6060:6060
     env_file: .env
-
     networks:
-      - shortly
+      - shortly-net
     depends_on:
       - mongodb
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    networks:
+      - shortly-net
+    restart: unless-stopped
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - 6831:6831/udp   # Agent (compact thrift protocol)
+      - 16686:16686     # Jaeger UI
+      - 4318:4318       # OpenTelemetry HTTP
 
   # prometheus:
   #   image: prom/prometheus
@@ -33,14 +35,14 @@ services:
   #     - 9090:9090
   #   restart: unless-stopped
   #   volumes:
-  #     - ./cmd/shortlyd/deploy/prom:/etc/prometheus
+  #     - ./deploy/prom:/etc/prometheus
   #     - prometheus-data:/prometheus
   #   command:
   #     - --config.file=/etc/prometheus/prometheus.yml
   #   depends_on:
   #     - shortlyd
   #   networks:
-  #     - shortly
+  #     - shortly-net
 
   # grafana:
   #   image: grafana/grafana
@@ -48,12 +50,12 @@ services:
   #     - 3000:3000
   #   restart: unless-stopped
   #   volumes:
-  #     - ./cmd/shortlyd/deploy/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+  #     - ./deploy/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
   #     - grafana-data:/var/lib/grafana
   #   depends_on:
   #     - prometheus
   #   networks:
-  #     - shortly
+  #     - shortly-net
 
   # alertmanager:
   #     image: prom/alertmanager
@@ -80,22 +82,19 @@ services:
   mongodb:
     image: mongo:latest
     networks:
-      - shortly
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: pass
+      - shortly-net
     ports:
-      - "27017:27017"
+      - 27017:27017
     volumes:
       - shortly-mongodb-data:/data/db
 
 networks:
-  shortly:
+  shortly-net:
     driver: bridge
 
 volumes:
   grafana-data: 
   prometheus-data: 
-  alertmanager-data: 
-  redis-data:
+  # alertmanager-data: 
+  # redis-data:
   shortly-mongodb-data:

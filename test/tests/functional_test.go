@@ -5,17 +5,25 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vkuksa/shortly/internal/domain"
+	"github.com/vkuksa/shortly/internal/link"
 )
+
+func serviceURL() string {
+	if url := os.Getenv("SERVICE_URL"); url != "" {
+		return url
+	}
+	// Default to service container address within Docker network.
+	return "http://shortly-svc:8081"
+}
 
 func Test_Functional(t *testing.T) {
 	const ExpectedLocation = "https://www.google.com/"
-	var uuid domain.UUID
+	var shortened string
 
 	tests := []struct {
 		name         string
@@ -23,47 +31,47 @@ func Test_Functional(t *testing.T) {
 		path         func() string // using func to dynamically calculate it with uuid
 		body         io.Reader
 		expectedCode int
-		validate     func(*testing.T, *httptest.ResponseRecorder)
+		validate     func(*testing.T, *http.Response)
 	}{
 		{
 			name:         "Link Shortening",
 			method:       http.MethodPost,
-			path:         func() string { return "/links" },
+			path:         func() string { return serviceURL() + "/links" },
 			body:         strings.NewReader(fmt.Sprintf(`{"url": "%s"}`, ExpectedLocation)),
-			expectedCode: http.StatusOK,
-			validate: func(t *testing.T, w *httptest.ResponseRecorder) {
-				var link domain.Link
-				assert.NoError(t, json.NewDecoder(w.Body).Decode(&link), "error decoding response body")
-				assert.NotEmpty(t, link.UUID, "UUID should not be empty")
-				uuid = link.UUID
+			expectedCode: http.StatusCreated,
+			validate: func(t *testing.T, res *http.Response) {
+				var link link.ShortenedLink
+				assert.NoError(t, json.NewDecoder(res.Body).Decode(&link), "error decoding response body")
+				assert.NotEmpty(t, link.Shortened, "UUID should not be empty")
+				shortened = link.Shortened
 			},
 		},
 		{
 			name:         "Redirrection",
 			method:       http.MethodGet,
-			path:         func() string { return fmt.Sprintf("/%s", uuid) },
+			path:         func() string { return fmt.Sprintf("%s/%s", serviceURL(), shortened) },
 			body:         nil,
 			expectedCode: http.StatusFound,
-			validate: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.NotEmpty(t, w.Result().Header["Location"], "location header empty")
-				location := w.Result().Header["Location"]
+			validate: func(t *testing.T, res *http.Response) {
+				assert.NotEmpty(t, res.Header["Location"], "location header empty")
+				location := res.Header["Location"]
 				assert.Equal(t, ExpectedLocation, location[0], "location header empty")
 			},
 		},
 		{
 			name:         "Retrieval",
 			method:       http.MethodGet,
-			path:         func() string { return fmt.Sprintf("/links/%s", uuid) },
+			path:         func() string { return fmt.Sprintf("%s/links/%s", serviceURL(), shortened) },
 			body:         nil,
 			expectedCode: http.StatusOK,
-			validate: func(t *testing.T, w *httptest.ResponseRecorder) {
-				var link domain.Link
-				if err := json.NewDecoder(w.Body).Decode(&link); err != nil {
+			validate: func(t *testing.T, res *http.Response) {
+				var link link.ShortenedLink
+				if err := json.NewDecoder(res.Body).Decode(&link); err != nil {
 					t.Errorf("error decoding response body: %v", err)
 				}
 
-				assert.Equal(t, 1, link.Count, "invalid usage counter")
-				assert.Equal(t, ExpectedLocation, link.URL, "url")
+				assert.Equal(t, 1, link.Hits, "invalid hit counter")
+				assert.Equal(t, ExpectedLocation, link.Original, "url")
 			},
 		},
 	}
@@ -73,13 +81,21 @@ func Test_Functional(t *testing.T) {
 			req, err := http.NewRequest(tc.method, tc.path(), tc.body)
 			assert.NoError(t, err, "new request")
 
-			w := httptest.NewRecorder()
-			httpServer.Serve(w, req)
+			client := &http.Client{
+				// Prevent client from following redirects.
+				CheckRedirect: func(*http.Request, []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			}
+			res, err := client.Do(req)
+			if err != nil {
+				t.Fatalf("error making request: %v", err)
+			}
 
-			assert.Equal(t, tc.expectedCode, w.Code, "unexpected status code")
+			assert.Equal(t, tc.expectedCode, res.StatusCode, "unexpected status code")
 
 			if tc.validate != nil {
-				tc.validate(t, w)
+				tc.validate(t, res)
 			}
 		})
 	}
