@@ -6,11 +6,11 @@ on:
 
 jobs:
   build-and-publish:
-    runs-on: 'ubuntu-24.04'
+    runs-on: ubuntu-24.04
     steps:
       - uses: 'actions/checkout@v3'
       - name: 'Build and push image'
         run: |
-          docker login --username vkuksa --password ${{secrets.GH_PAT}}
+          echo "${{ secrets.GH_PAT }}" | docker login ghcr.io --username vkuksa --password-stdin
           docker build . --tag ghcr.io/vkuksa/shortly:latest
           docker push ghcr.io/vkuksa/shortly:latest
