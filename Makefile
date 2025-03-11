@@ -3,8 +3,8 @@ SHELL:=/bin/bash
 .SILENT:
 .DEFAULT_GOAL := run
 
-export GOCACHE := /go/cache
-export GOMODCACHE := /go/pkg/mod
+export GOCACHE := $(HOME)/.cache/go
+export GOMODCACHE := $(HOME)/go/pkg/mod
 
 run: down up
 
