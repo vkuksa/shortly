@@ -7,10 +7,13 @@ on:
 jobs:
   build-and-publish:
     runs-on: ubuntu-24.04
+    env:
+      GOCACHE: /home/runner/.cache/go
+      GOMODCACHE: /home/runner/go/pkg/mod
     steps:
       - uses: 'actions/checkout@v3'
       - name: 'Build and push image'
         run: |
           echo "${{ secrets.GH_PAT }}" | docker login ghcr.io --username vkuksa --password-stdin
-          docker build . --tag ghcr.io/vkuksa/shortly:latest
+          docker build . --tag ghcr.io/vkuksa/shortly:latest -build-arg GOCACHE=${GOCACHE} --build-arg GOMODCACHE=${GOMODCACHE}
           docker push ghcr.io/vkuksa/shortly:latest
