@@ -7,17 +7,19 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/vkuksa/shortly/internal/infrastructure/http"
 	"github.com/vkuksa/shortly/internal/interface/controller/rest"
+	"github.com/vkuksa/shortly/internal/interface/controller/web"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/fx"
 )
 
-func RegisterServer(lifecycle fx.Lifecycle, shutdowner fx.Shutdowner, server http.Server, controller rest.LinkController) {
+func RegisterServer(lifecycle fx.Lifecycle, shutdowner fx.Shutdowner, server http.Server, restController rest.LinkController, webController web.LinkController) {
 	router, ok := server.Handler.(*chi.Mux)
 	if !ok {
 		panic("handler is not a chi.Router")
 	}
-	controller.Register(router)
+	restController.Register(router)
+	webController.Register(router)
 
 	lifecycle.Append(fx.Hook{
 		OnStart: func(context.Context) error {

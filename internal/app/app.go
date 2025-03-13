@@ -7,6 +7,7 @@ import (
 	"github.com/vkuksa/shortly/internal/infrastructure/storage/mongodb"
 	"github.com/vkuksa/shortly/internal/infrastructure/trace"
 	"github.com/vkuksa/shortly/internal/interface/controller/rest"
+	"github.com/vkuksa/shortly/internal/interface/controller/web"
 	"github.com/vkuksa/shortly/internal/link"
 	"github.com/vkuksa/shortly/internal/usecase"
 	"go.uber.org/fx"
@@ -33,6 +34,7 @@ func New(
 			link.NewFactory,
 			usecase.New,
 			rest.NewLinkController,
+			web.NewLinkController,
 			http.NewServer,
 		),
 		fx.Invoke(
